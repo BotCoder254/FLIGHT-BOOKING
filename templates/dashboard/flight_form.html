@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }} Flight - TravelEase{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <div class="py-10">
+        <header>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="text-3xl font-bold leading-tight text-gray-900">{{ action }} Flight</h1>
+            </div>
+        </header>
+        <main>
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="mt-8">
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <form method="POST" class="space-y-6">
+                                {% csrf_token %}
+                                
+                                {% if form.errors %}
+                                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                        <strong class="font-bold">Error!</strong>
+                                        <span class="block sm:inline">Please correct the errors below.</span>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                    <div>
+                                        <label for="{{ form.flight_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Flight Number</label>
+                                        {{ form.flight_number|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.flight_number.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.flight_number.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.airline.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Airline</label>
+                                        {{ form.airline|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.airline.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.airline.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.departure_city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Departure City</label>
+                                        {{ form.departure_city|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.departure_city.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.departure_city.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.arrival_city.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Arrival City</label>
+                                        {{ form.arrival_city|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.arrival_city.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.arrival_city.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.departure_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Departure Time</label>
+                                        {{ form.departure_time|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.departure_time.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.departure_time.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.arrival_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Arrival Time</label>
+                                        {{ form.arrival_time|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.arrival_time.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.arrival_time.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                                        {{ form.price|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.price.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.price.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.available_seats.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Available Seats</label>
+                                        {{ form.available_seats|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.available_seats.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.available_seats.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.travel_class.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Travel Class</label>
+                                        {{ form.travel_class|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.travel_class.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.travel_class.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-end space-x-4 mt-6">
+                                    <a href="{% url 'manage_flights' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                        {{ action }} Flight
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %} 

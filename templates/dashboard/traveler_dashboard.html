@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Dashboard - TravelEase{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <div class="py-10">
+        <header>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="text-3xl font-bold leading-tight text-gray-900">My Dashboard</h1>
+            </div>
+        </header>
+        <main>
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <!-- Quick Actions -->
+                <div class="mt-8">
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Quick Actions</h3>
+                            <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div>
+                                    <a href="{% url 'search_flights' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center">
+                                        <i class="fas fa-plane mr-2"></i>
+                                        Book Flight
+                                    </a>
+                                </div>
+                                <div>
+                                    <a href="{% url 'search_hotels' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center">
+                                        <i class="fas fa-hotel mr-2"></i>
+                                        Book Hotel
+                                    </a>
+                                </div>
+                                <div>
+                                    <a href="{% url 'search_tours' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full justify-center">
+                                        <i class="fas fa-map-marked-alt mr-2"></i>
+                                        Book Tour
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Profile Card -->
+                <div class="mt-8">
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="w-20 h-20 rounded-full object-cover">
+                                {% else %}
+                                    <div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center">
+                                        <i class="fas fa-user text-3xl text-indigo-500"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="ml-6">
+                                    <h3 class="text-lg font-medium text-gray-900">{{ user.get_full_name }}</h3>
+                                    <p class="text-gray-500">{{ user.email }}</p>
+                                    {% if user.phone_number %}
+                                        <p class="text-gray-500">{{ user.phone_number }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Bookings -->
+                <div class="mt-8">
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">My Bookings</h3>
+                            <a href="{% url 'booking_list' %}" class="text-sm text-indigo-600 hover:text-indigo-900">View all</a>
+                        </div>
+                        {% if bookings %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for booking in bookings %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">#{{ booking.id }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ booking.get_booking_type_display }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {% if booking.booking_type == 'FLIGHT' %}
+                                                        {{ booking.flight.departure_city }} to {{ booking.flight.arrival_city }}
+                                                    {% elif booking.booking_type == 'HOTEL' %}
+                                                        {{ booking.hotel.name }}
+                                                    {% else %}
+                                                        {{ booking.tour.name }}
+                                                    {% endif %}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                        {% if booking.status == 'CONFIRMED' %}bg-green-100 text-green-800
+                                                        {% elif booking.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                                        {{ booking.get_status_display }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${{ booking.total_amount }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ booking.booking_date|date:"M d, Y" }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <a href="{% url 'booking_detail' booking.id %}" class="text-indigo-600 hover:text-indigo-900">View Details</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="p-6 text-center">
+                                <div class="mb-4">
+                                    <i class="fas fa-calendar-times text-4xl text-gray-400"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-2">No bookings found</h3>
+                                <p class="text-gray-600 mb-4">Start exploring our amazing offers!</p>
+                                <div class="space-x-4">
+                                    <a href="{% url 'search_flights' %}" class="text-indigo-600 hover:text-indigo-500">
+                                        Search Flights
+                                    </a>
+                                    <a href="{% url 'search_hotels' %}" class="text-indigo-600 hover:text-indigo-500">
+                                        Search Hotels
+                                    </a>
+                                    <a href="{% url 'search_tours' %}" class="text-indigo-600 hover:text-indigo-500">
+                                        Search Tours
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,128 @@
+{% extends 'search/base_search.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load custom_filters %}
+
+{% block title %}Search Tours - TravelEase{% endblock %}
+
+{% block search_title %}Search Tours{% endblock %}
+
+{% block search_form %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div>
+        <label for="{{ form.destination.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+        {{ form.destination|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
+    </div>
+    <div>
+        <label for="{{ form.tour_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Tour Type</label>
+        {{ form.tour_type|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
+    </div>
+    <div>
+        <label for="{{ form.start_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+        {{ form.start_date|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
+    </div>
+    <div>
+        <label for="{{ form.max_duration.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Maximum Duration (Days)</label>
+        {{ form.max_duration|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
+    </div>
+    <div>
+        <label for="{{ form.participants.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Number of Participants</label>
+        {{ form.participants|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
+    </div>
+    <div>
+        <label for="{{ form.max_price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Maximum Price</label>
+        {{ form.max_price|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
+    </div>
+</div>
+{% endblock %}
+
+{% block search_results %}
+{% if tours %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for tour in tours %}
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition duration-300">
+            {% if tour.image %}
+                <img src="{{ tour.image.url }}" alt="{{ tour.name }}" class="w-full h-48 object-cover">
+            {% else %}
+                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-map-marked-alt text-4xl text-gray-400"></i>
+                </div>
+            {% endif %}
+            
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">{{ tour.name }}</h3>
+                    <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded">
+                        {{ tour.get_tour_type_display }}
+                    </span>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-sm text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-2"></i>{{ tour.destination }}
+                        </p>
+                    </div>
+                    
+                    <div class="text-sm text-gray-600">
+                        <p class="line-clamp-3">{{ tour.description }}</p>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500">Duration</p>
+                                <p class="font-medium">{{ tour.duration_days }} days</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Start Date</p>
+                                <p class="font-medium">{{ tour.start_date|date:"M d, Y" }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Available Spots</p>
+                                <p class="font-medium">{{ tour.max_participants|sub:tour.current_participants }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Group Size</p>
+                                <p class="font-medium">{{ tour.current_participants }}/{{ tour.max_participants }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-4">
+                        <p class="text-sm text-gray-500 mb-2">Included Services</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for service in tour.included_services.split %}
+                                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                                    {{ service }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-2xl font-bold text-indigo-600">${{ tour.price }}</p>
+                                <p class="text-sm text-gray-500">per person</p>
+                            </div>
+                            <a href="{% url 'book_tour' tour.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
+                                Book Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+        <div class="text-gray-500 mb-4">
+            <i class="fas fa-search text-4xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold mb-2">No Tours Found</h3>
+        <p class="text-gray-600">Try adjusting your search criteria to find available tours.</p>
+    </div>
+{% endif %}
+{% endblock %} 

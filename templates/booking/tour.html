@@ -1,0 +1,428 @@
+{% extends 'booking/base_booking.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load custom_filters %}
+
+{% block title %}Book Tour - TravelEase{% endblock %}
+
+{% block extra_head %}
+<style>
+.slider-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    overflow: hidden;
+}
+
+.slider {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    height: 100%;
+}
+
+.slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+}
+
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slider-nav {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.slider-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+}
+
+.slider-dot.active {
+    background: white;
+}
+
+.slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.slider-arrow.prev {
+    left: 20px;
+}
+
+.slider-arrow.next {
+    right: 20px;
+}
+</style>
+{% endblock %}
+
+{% block booking_title %}Book Tour{% endblock %}
+
+{% block item_details %}
+<div class="space-y-6">
+    <!-- Tour Images Slider -->
+    <div class="relative">
+        <div class="slider-container rounded-lg">
+            <div class="slider" id="imageSlider">
+                {% if tour.images.all %}
+                    {% for image in tour.images.all %}
+                        <div class="slide">
+                            <img src="{{ image.image.url }}" alt="{{ tour.name }}" class="rounded-lg">
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="slide">
+                        <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-map-marked-alt text-4xl text-gray-400"></i>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if tour.images.all.count > 1 %}
+                <button class="slider-arrow prev" onclick="moveSlide(-1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="slider-arrow next" onclick="moveSlide(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="slider-nav" id="sliderNav"></div>
+            {% endif %}
+        </div>
+        
+        <div class="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black to-transparent text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-2xl font-semibold">{{ tour.name }}</h3>
+                    <p class="flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2"></i>
+                        {{ tour.destination }}
+                    </p>
+                </div>
+                <div class="bg-indigo-600 text-white px-3 py-1 rounded-lg">
+                    {{ tour.get_tour_type_display }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tour Details -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-sm text-gray-500">Duration</p>
+            <p class="font-medium">{{ tour.duration_days }} days</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-sm text-gray-500">Start Date</p>
+            <p class="font-medium">{{ tour.start_date|date:"M d, Y" }}</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-sm text-gray-500">End Date</p>
+            <p class="font-medium">{{ tour.end_date|date:"M d, Y" }}</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-sm text-gray-500">Available Spots</p>
+            <p class="font-medium">{{ tour.max_participants|sub:tour.current_participants }} of {{ tour.max_participants }}</p>
+        </div>
+    </div>
+    
+    <!-- Description -->
+    <div>
+        <h4 class="font-semibold mb-2">Tour Description</h4>
+        <p class="text-gray-600">{{ tour.description }}</p>
+    </div>
+    
+    <!-- Included Services -->
+    <div>
+        <h4 class="font-semibold mb-4">Included Services</h4>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {% for service in tour.included_services.split %}
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-check text-green-500"></i>
+                <span>{{ service }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Tour Highlights -->
+    <div class="bg-gray-50 rounded-lg p-6">
+        <h4 class="font-semibold mb-4">Tour Highlights</h4>
+        <div class="space-y-4">
+            <div class="flex items-start">
+                <i class="fas fa-route text-indigo-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="font-medium">Professional Guide</p>
+                    <p class="text-sm text-gray-600">Expert local guide throughout the tour</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <i class="fas fa-hotel text-indigo-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="font-medium">Accommodation</p>
+                    <p class="text-sm text-gray-600">Comfortable hotels with breakfast included</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <i class="fas fa-bus text-indigo-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="font-medium">Transportation</p>
+                    <p class="text-sm text-gray-600">Air-conditioned vehicle for all transfers</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <i class="fas fa-utensils text-indigo-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="font-medium">Meals</p>
+                    <p class="text-sm text-gray-600">Daily breakfast and selected meals included</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Policies -->
+    <div class="space-y-4">
+        <h4 class="font-semibold">Tour Policies</h4>
+        
+        <div class="space-y-2">
+            <div class="flex items-start">
+                <i class="fas fa-clock text-indigo-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="font-medium">Meeting Point</p>
+                    <p class="text-sm text-gray-600">Tour starts at 9:00 AM on the first day</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <i class="fas fa-user-friends text-indigo-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="font-medium">Group Size</p>
+                    <p class="text-sm text-gray-600">Maximum {{ tour.max_participants }} participants</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <i class="fas fa-ban text-indigo-600 mt-1 mr-3"></i>
+                <div>
+                    <p class="font-medium">Cancellation Policy</p>
+                    <p class="text-sm text-gray-600">Free cancellation up to 7 days before the tour</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block booking_form %}
+<div class="space-y-4">
+    {{ form.non_field_errors }}
+    
+    <div>
+        <label for="{{ form.number_of_guests.id_for_label }}" class="block text-sm font-medium text-gray-700">Number of Participants</label>
+        {{ form.number_of_guests }}
+        <p class="mt-1 text-sm text-gray-500">Maximum {{ tour.max_participants|sub:tour.current_participants }} spots available</p>
+        {{ form.number_of_guests.errors }}
+    </div>
+    
+    <div>
+        <label for="{{ form.special_requests.id_for_label }}" class="block text-sm font-medium text-gray-700">Special Requests</label>
+        {{ form.special_requests }}
+        <p class="mt-1 text-sm text-gray-500">Dietary requirements, accessibility needs, etc.</p>
+        {{ form.special_requests.errors }}
+    </div>
+    
+    <!-- Price Summary -->
+    <div class="border-t border-gray-200 pt-4 mt-4">
+        <h4 class="font-semibold mb-2">Price Summary</h4>
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span>Price per Person</span>
+                <span>${{ tour.price }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span>Participants</span>
+                <span>× <span id="participant-count">1</span></span>
+            </div>
+            <div class="flex justify-between font-semibold text-lg pt-2 border-t">
+                <span>Total Amount</span>
+                <span id="total-amount">${{ tour.price }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSlide = 0;
+const slides = document.querySelectorAll('.slide');
+const dots = document.querySelectorAll('.slider-dot');
+
+function showSlide(n) {
+    if (!slides.length) return; // Exit if no slides
+    
+    currentSlide = n;
+    if (currentSlide >= slides.length) currentSlide = 0;
+    if (currentSlide < 0) currentSlide = slides.length - 1;
+    
+    const slider = document.querySelector('.slider');
+    slider.style.transform = `translateX(-${currentSlide * 100}%)`;
+    
+    // Update dots
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('bg-white', index === currentSlide);
+        dot.classList.toggle('bg-gray-400', index !== currentSlide);
+    });
+}
+
+function nextSlide() {
+    if (!slides.length) return; // Exit if no slides
+    showSlide(currentSlide + 1);
+}
+
+function prevSlide() {
+    if (!slides.length) return; // Exit if no slides
+    showSlide(currentSlide - 1);
+}
+
+// Initialize slider
+if (slides.length > 0) {
+    showSlide(0);
+    
+    // Auto advance slides every 5 seconds
+    setInterval(nextSlide, 5000);
+}
+
+// Add touch support
+let touchStartX = 0;
+let touchEndX = 0;
+
+const slider = document.querySelector('.slider-container');
+if (slider) {
+    slider.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+
+    slider.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+}
+
+function handleSwipe() {
+    if (!slides.length) return; // Exit if no slides
+    const swipeThreshold = 50;
+    const difference = touchStartX - touchEndX;
+    
+    if (Math.abs(difference) > swipeThreshold) {
+        if (difference > 0) {
+            nextSlide();
+        } else {
+            prevSlide();
+        }
+    }
+}
+
+// Price calculation
+const participantsInput = document.getElementById('{{ form.number_of_guests.id_for_label }}');
+const participantCount = document.getElementById('participant-count');
+const totalAmount = document.getElementById('total-amount');
+const pricePerPerson = parseFloat('{{ tour.price }}');
+
+function calculateTotal() {
+    const participants = parseInt(participantsInput.value) || 1;
+    participantCount.textContent = participants;
+    const total = pricePerPerson * participants;
+    totalAmount.textContent = '$' + total.toFixed(2);
+}
+
+participantsInput.addEventListener('change', calculateTotal);
+calculateTotal();
+</script>
+
+<style>
+    .slider-container {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .slider {
+        width: 100%;
+    }
+    
+    .slide {
+        display: none;
+    }
+    
+    .slider-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 1rem;
+        cursor: pointer;
+        border: none;
+        border-radius: 50%;
+        z-index: 10;
+    }
+    
+    .prev {
+        left: 1rem;
+    }
+    
+    .next {
+        right: 1rem;
+    }
+    
+    .slider-nav {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.5rem;
+        z-index: 10;
+    }
+    
+    .nav-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+    }
+    
+    .nav-dot.active {
+        background: white;
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }} Hotel - TravelEase{% endblock %}
+
+{% block extra_head %}
+<style>
+.image-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+.image-preview-item {
+    position: relative;
+    aspect-ratio: 1;
+}
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+.image-preview-item .remove-image {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    padding: 0.25rem;
+    cursor: pointer;
+}
+</style>
+<script>
+function previewImages(input) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    
+    if (input.files) {
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.innerHTML = `
+                    <img src="${e.target.result}" class="h-32 w-full object-cover rounded-lg">
+                    <button type="button" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                preview.appendChild(div);
+            }
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+async function deleteImage(imageId) {
+    if (confirm('Are you sure you want to delete this image?')) {
+        try {
+            const response = await fetch(`/dashboard/hotels/delete-image/${imageId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete image');
+            }
+        } catch (error) {
+            alert('An error occurred');
+        }
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <div class="py-10">
+        <header>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="text-3xl font-bold leading-tight text-gray-900">{{ action }} Hotel</h1>
+            </div>
+        </header>
+        <main>
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="mt-8">
+                    <div class="bg-white shadow sm:rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                                {% csrf_token %}
+                                
+                                {% if form.errors %}
+                                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                        <strong class="font-bold">Error!</strong>
+                                        <span class="block sm:inline">Please correct the errors below.</span>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                    <div>
+                                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Hotel Name</label>
+                                        {{ form.name|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.name.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                                        {{ form.location|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.location.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.location.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="sm:col-span-2">
+                                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                        {{ form.description|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.description.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.price_per_night.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Price per Night</label>
+                                        {{ form.price_per_night|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.price_per_night.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.price_per_night.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.room_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Room Type</label>
+                                        {{ form.room_type|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.room_type.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.room_type.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.available_rooms.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Available Rooms</label>
+                                        {{ form.available_rooms|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.available_rooms.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.available_rooms.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.rating.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                                        {{ form.rating|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.rating.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.rating.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="sm:col-span-2">
+                                        <label for="{{ form.amenities.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                                        {{ form.amenities|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" }}
+                                        {% if form.amenities.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.amenities.errors.0 }}</p>
+                                        {% endif %}
+                                        <p class="mt-2 text-sm text-gray-500">List amenities separated by commas</p>
+                                    </div>
+                                    
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Hotel Images</label>
+                                        {% if form.instance.id and form.instance.images.all %}
+                                            <div class="grid grid-cols-3 gap-4 mt-2">
+                                                {% for image in form.instance.images.all %}
+                                                    <div class="relative" data-image-id="{{ image.id }}">
+                                                        <img src="{{ image.image.url }}" alt="Hotel Image" class="h-32 w-full object-cover rounded-lg">
+                                                        <button type="button" 
+                                                                onclick="deleteImage('{{ image.id }}')" 
+                                                                class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="mt-2">
+                                            {{ form.images|add_class:"hidden" }}
+                                            <label for="{{ form.images.auto_id }}" class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                                <i class="fas fa-plus mr-2"></i> Add Images
+                                            </label>
+                                        </div>
+                                        <div id="imagePreview" class="grid grid-cols-3 gap-4 mt-2"></div>
+                                        {% if form.images.errors %}
+                                            <p class="mt-2 text-sm text-red-600">{{ form.images.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-end space-x-4 mt-6">
+                                    <a href="{% url 'manage_hotels' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                        {{ action }} Hotel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %} 

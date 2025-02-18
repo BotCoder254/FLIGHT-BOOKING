@@ -1,0 +1,9 @@
+Django
+psycopg2-binary
+python-dotenv
+django-tailwind
+Pillow
+django-browser-reload
+django-crispy-forms
+crispy-tailwind
+django-widget-tweaks

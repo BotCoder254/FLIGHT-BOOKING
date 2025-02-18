@@ -1,0 +1,326 @@
+{% load static compress %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Travel Booking{% endblock %}</title>
+    {% compress css %}
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    {% endcompress %}
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <!-- AOS -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+    <!-- Global Loader -->
+    <div id="globalLoader" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-4">
+            {% include 'components/loader.html' %}
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg fixed w-full z-50" x-data="{ isOpen: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'home' %}" class="text-2xl font-bold text-indigo-600">TravelEase</a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        {% if user.is_authenticated %}
+                            {% if user.role == 'admin' %}
+                                <a href="{% url 'dashboard' %}" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-chart-line mr-2"></i> Dashboard
+                                </a>
+                                <a href="{% url 'manage_flights' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-plane mr-2"></i> Flights
+                                </a>
+                                <a href="{% url 'manage_hotels' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-hotel mr-2"></i> Hotels
+                                </a>
+                                <a href="{% url 'manage_tours' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-map-marked-alt mr-2"></i> Tours
+                                </a>
+                                <a href="{% url 'manage_users' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-users mr-2"></i> Users
+                                </a>
+                                <a href="{% url 'booking_list' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-calendar-check mr-2"></i> Bookings
+                                </a>
+                            {% else %}
+                                <a href="{% url 'dashboard' %}" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-home mr-2"></i> Dashboard
+                                </a>
+                                <a href="{% url 'search_flights' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-plane mr-2"></i> Flights
+                                </a>
+                                <a href="{% url 'search_hotels' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-hotel mr-2"></i> Hotels
+                                </a>
+                                <a href="{% url 'search_tours' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    <i class="fas fa-map-marked-alt mr-2"></i> Tours
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'home' %}" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Home
+                            </a>
+                            <a href="{% url 'search_flights' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Flights
+                            </a>
+                            <a href="{% url 'search_hotels' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Hotels
+                            </a>
+                            <a href="{% url 'search_tours' %}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                Tours
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'logout' %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">Logout</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                        <a href="{% url 'register' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">Sign Up</a>
+                    {% endif %}
+                </div>
+                <div class="-mr-2 flex items-center sm:hidden">
+                    <button @click="isOpen = !isOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars" x-show="!isOpen"></i>
+                        <i class="fas fa-times" x-show="isOpen"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div class="sm:hidden" x-show="isOpen" @click.away="isOpen = false">
+            <div class="pt-2 pb-3 space-y-1">
+                {% if user.is_authenticated %}
+                    {% if user.role == 'admin' %}
+                        <a href="{% url 'dashboard' %}" class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-chart-line mr-2"></i> Dashboard
+                        </a>
+                        <a href="{% url 'manage_flights' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-plane mr-2"></i> Flights
+                        </a>
+                        <a href="{% url 'manage_hotels' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-hotel mr-2"></i> Hotels
+                        </a>
+                        <a href="{% url 'manage_tours' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-map-marked-alt mr-2"></i> Tours
+                        </a>
+                        <a href="{% url 'manage_users' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-users mr-2"></i> Users
+                        </a>
+                        <a href="{% url 'booking_list' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-calendar-check mr-2"></i> Bookings
+                        </a>
+                    {% else %}
+                        <a href="{% url 'dashboard' %}" class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-home mr-2"></i> Dashboard
+                        </a>
+                        <a href="{% url 'search_flights' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-plane mr-2"></i> Flights
+                        </a>
+                        <a href="{% url 'search_hotels' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-hotel mr-2"></i> Hotels
+                        </a>
+                        <a href="{% url 'search_tours' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            <i class="fas fa-map-marked-alt mr-2"></i> Tours
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'home' %}" class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Home</a>
+                    <a href="{% url 'search_flights' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Flights</a>
+                    <a href="{% url 'search_hotels' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Hotels</a>
+                    <a href="{% url 'search_tours' %}" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Tours</a>
+                {% endif %}
+            </div>
+            <div class="pt-4 pb-3 border-t border-gray-200">
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">Login</a>
+                    <a href="{% url 'register' %}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-screen pt-16">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="space-y-4">
+                    <h3 class="text-xl font-bold">TravelEase</h3>
+                    <p class="text-gray-300">Making your travel dreams come true.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-300 hover:text-white"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white">About Us</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Contact</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">FAQ</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white">Flight Booking</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Hotel Booking</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Tour Packages</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Car Rental</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact Us</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>123 Travel Street, City</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-phone"></i>
+                            <span>+1 234 567 890</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-envelope"></i>
+                            <span>info@travelease.com</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center">
+                <p class="text-gray-300">&copy; 2024 TravelEase. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init();
+        });
+    </script>
+
+    <!-- JavaScript -->
+    <script>
+    // Global loader functions with minimum display time
+    const MIN_LOADER_TIME = 1000; // Minimum time in milliseconds to show the loader
+    let loaderStartTime = 0;
+    let loaderTimeout = null;
+
+    window.showLoader = function() {
+        loaderStartTime = Date.now();
+        document.getElementById('globalLoader').classList.remove('hidden');
+    };
+
+    window.hideLoader = function() {
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - loaderStartTime;
+        const remainingTime = Math.max(0, MIN_LOADER_TIME - elapsedTime);
+
+        // Clear any existing timeout
+        if (loaderTimeout) {
+            clearTimeout(loaderTimeout);
+        }
+
+        // Set timeout to ensure minimum display time
+        loaderTimeout = setTimeout(() => {
+            document.getElementById('globalLoader').classList.add('hidden');
+        }, remainingTime);
+    };
+
+    // Initialize loader functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show loader initially
+        showLoader();
+
+        // Add loader to all forms except those with data-no-loader attribute
+        document.querySelectorAll('form:not([data-no-loader])').forEach(form => {
+            form.addEventListener('submit', function() {
+                showLoader();
+            });
+        });
+
+        // Add loader to all links with data-loader attribute
+        document.querySelectorAll('a[data-loader]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!e.ctrlKey && !e.shiftKey && !e.metaKey) {
+                    showLoader();
+                }
+            });
+        });
+
+        // Add loader to all buttons with data-loader attribute
+        document.querySelectorAll('button[data-loader]').forEach(button => {
+            button.addEventListener('click', function() {
+                showLoader();
+            });
+        });
+
+        // Hide loader when page is fully loaded
+        window.addEventListener('load', hideLoader);
+    });
+
+    // Add loader to AJAX requests
+    let originalFetch = window.fetch;
+    window.fetch = function() {
+        showLoader();
+        return originalFetch.apply(this, arguments)
+            .then(response => {
+                hideLoader();
+                return response;
+            })
+            .catch(error => {
+                hideLoader();
+                throw error;
+            });
+    };
+
+    // Add loader to XMLHttpRequest
+    let originalXHR = window.XMLHttpRequest;
+    window.XMLHttpRequest = function() {
+        let xhr = new originalXHR();
+        let send = xhr.send;
+        xhr.send = function() {
+            showLoader();
+            xhr.addEventListener('loadend', function() {
+                hideLoader();
+            });
+            return send.apply(xhr, arguments);
+        };
+        return xhr;
+    };
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html> 

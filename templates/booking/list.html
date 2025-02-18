@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Bookings - TravelEase{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">My Bookings</h1>
+            <p class="text-gray-600">Manage your travel bookings and reservations</p>
+        </div>
+        
+        <!-- Booking Filters -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex flex-wrap gap-4">
+                <button class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300">
+                    All Bookings
+                </button>
+                <button class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition duration-300">
+                    Flights
+                </button>
+                <button class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition duration-300">
+                    Hotels
+                </button>
+                <button class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition duration-300">
+                    Tours
+                </button>
+            </div>
+        </div>
+        
+        <!-- Bookings List -->
+        <div class="space-y-6">
+            {% if bookings %}
+                {% for booking in bookings %}
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition duration-300">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-4">
+                                    <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                                        {% if booking.booking_type == 'flight' %}
+                                            <i class="fas fa-plane text-indigo-600 text-xl"></i>
+                                        {% elif booking.booking_type == 'hotel' %}
+                                            <i class="fas fa-hotel text-indigo-600 text-xl"></i>
+                                        {% else %}
+                                            <i class="fas fa-map-marked-alt text-indigo-600 text-xl"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold">
+                                            {% if booking.booking_type == 'flight' %}
+                                                Flight: {{ booking.flight.departure_city }} to {{ booking.flight.arrival_city }}
+                                            {% elif booking.booking_type == 'hotel' %}
+                                                Hotel: {{ booking.hotel.name }}
+                                            {% else %}
+                                                Tour: {{ booking.tour.name }}
+                                            {% endif %}
+                                        </h3>
+                                        <p class="text-sm text-gray-500">Booking ID: {{ booking.id }}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    {% if booking.status == 'confirmed' %}
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            Confirmed
+                                        </span>
+                                    {% elif booking.status == 'pending' %}
+                                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            Pending
+                                        </span>
+                                    {% elif booking.status == 'cancelled' %}
+                                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            Cancelled
+                                        </span>
+                                    {% else %}
+                                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            Completed
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <!-- Dates -->
+                                <div>
+                                    <p class="text-sm text-gray-500">
+                                        {% if booking.booking_type == 'flight' %}
+                                            Flight Date
+                                        {% elif booking.booking_type == 'hotel' %}
+                                            Check-in
+                                        {% else %}
+                                            Start Date
+                                        {% endif %}
+                                    </p>
+                                    <p class="font-medium">
+                                        {% if booking.booking_type == 'flight' %}
+                                            {{ booking.flight.departure_time|date:"F j, Y" }}
+                                        {% elif booking.booking_type == 'hotel' %}
+                                            {{ booking.check_in_date|date:"F j, Y" }}
+                                        {% else %}
+                                            {{ booking.tour.start_date|date:"F j, Y" }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <!-- Details -->
+                                <div>
+                                    <p class="text-sm text-gray-500">
+                                        {% if booking.booking_type == 'flight' %}
+                                            Class
+                                        {% elif booking.booking_type == 'hotel' %}
+                                            Room Type
+                                        {% else %}
+                                            Tour Type
+                                        {% endif %}
+                                    </p>
+                                    <p class="font-medium">
+                                        {% if booking.booking_type == 'flight' %}
+                                            {{ booking.flight.get_travel_class_display }}
+                                        {% elif booking.booking_type == 'hotel' %}
+                                            {{ booking.hotel.get_room_type_display }}
+                                        {% else %}
+                                            {{ booking.tour.get_tour_type_display }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                
+                                <!-- Guests -->
+                                <div>
+                                    <p class="text-sm text-gray-500">Guests</p>
+                                    <p class="font-medium">{{ booking.number_of_guests }}</p>
+                                </div>
+                                
+                                <!-- Amount -->
+                                <div>
+                                    <p class="text-sm text-gray-500">Total Amount</p>
+                                    <p class="font-medium">${{ booking.total_amount }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="mt-6 flex items-center justify-end space-x-4">
+                                <a href="{% url 'booking_confirmation' booking.id %}" class="text-indigo-600 hover:text-indigo-500">
+                                    View Details
+                                </a>
+                                
+                                {% if booking.status == 'confirmed' %}
+                                    <a href="{% url 'cancel_booking' booking.id %}" class="text-red-600 hover:text-red-500">
+                                        Cancel Booking
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                    <div class="text-gray-500 mb-4">
+                        <i class="fas fa-calendar-times text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">No Bookings Found</h3>
+                    <p class="text-gray-600 mb-4">You haven't made any bookings yet.</p>
+                    <div class="space-x-4">
+                        <a href="{% url 'search_flights' %}" class="text-indigo-600 hover:text-indigo-500">
+                            Search Flights
+                        </a>
+                        <a href="{% url 'search_hotels' %}" class="text-indigo-600 hover:text-indigo-500">
+                            Search Hotels
+                        </a>
+                        <a href="{% url 'search_tours' %}" class="text-indigo-600 hover:text-indigo-500">
+                            Search Tours
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

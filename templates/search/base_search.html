@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Search Form -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6" data-aos="fade-up">
+            <div class="flex justify-between items-center cursor-pointer" onclick="toggleSearch()">
+                <h2 class="text-2xl font-bold">{% block search_title %}Search{% endblock %}</h2>
+                <i class="fas fa-chevron-down transform transition-transform duration-200" id="searchIcon"></i>
+            </div>
+            <div id="searchForm" class="mt-6">
+                <form method="GET" class="space-y-6">
+                    {% block search_form %}{% endblock %}
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
+                            <i class="fas fa-search mr-2"></i>
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="space-y-6" data-aos="fade-up" data-aos-delay="100">
+            {% block search_results %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSearch() {
+    const form = document.getElementById('searchForm');
+    const icon = document.getElementById('searchIcon');
+    const isHidden = form.style.display === 'none';
+    
+    form.style.display = isHidden ? 'block' : 'none';
+    icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
+    
+    // Store the state in localStorage
+    localStorage.setItem('searchFormVisible', isHidden);
+}
+
+// On page load, check localStorage for saved state
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('searchForm');
+    const icon = document.getElementById('searchIcon');
+    const isVisible = localStorage.getItem('searchFormVisible') !== 'false';
+    
+    form.style.display = isVisible ? 'block' : 'none';
+    icon.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+});
+</script>
+{% endblock %} 

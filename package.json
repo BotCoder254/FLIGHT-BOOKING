@@ -1,0 +1,11 @@
+{
+  "name": "travel-booking",
+  "version": "1.0.0",
+  "description": "A travel booking platform",
+  "scripts": {
+    "build-css": "tailwindcss -i ./static/css/base.css -o ./static/css/output.css --watch"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+} 
