@@ -9,6 +9,18 @@ from .forms import (
     TourSearchForm, BookingForm, FlightForm, HotelForm, TourForm
 )
 from .models import User, Flight, Hotel, Tour, Booking
+import base64
+import logging
+from datetime import datetime
+import requests
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
+from django.conf import settings
+from django.template.loader import render_to_string
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 def home(request):
     if request.user.is_authenticated:
@@ -171,14 +183,29 @@ def book_flight(request, flight_id):
             booking.booking_type = Booking.FLIGHT
             booking.flight = flight
             booking.total_amount = flight.price * booking.number_of_guests
+            booking.status = Booking.PENDING  # Keep as PENDING until payment
+            booking.payment_status = Booking.UNPAID
             booking.save()
             
             # Update available seats
             flight.available_seats -= booking.number_of_guests
             flight.save()
             
-            messages.success(request, 'Flight booked successfully!')
-            return redirect('booking_confirmation', booking_id=booking.id)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'booking_id': booking.id,
+                    'total_amount': str(booking.total_amount)
+                })
+            
+            messages.success(request, 'Flight booked successfully! Please complete the payment.')
+            return redirect('booking_detail', booking_id=booking.id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid form data. Please check your input.'
+                })
     else:
         form = BookingForm()
     
@@ -205,16 +232,29 @@ def book_hotel(request, hotel_id):
             check_out = form.cleaned_data['check_out']
             nights = (check_out - check_in).days
             booking.total_amount = hotel.price_per_night * nights * booking.number_of_guests
-            
-            # Save the booking
+            booking.status = Booking.PENDING  # Keep as PENDING until payment
+            booking.payment_status = Booking.UNPAID
             booking.save()
             
             # Update available rooms
             hotel.available_rooms -= 1
             hotel.save()
             
-            messages.success(request, 'Hotel booked successfully!')
-            return redirect('booking_confirmation', booking_id=booking.id)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'booking_id': booking.id,
+                    'total_amount': str(booking.total_amount)
+                })
+            
+            messages.success(request, 'Hotel booked successfully! Please complete the payment.')
+            return redirect('booking_detail', booking_id=booking.id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid form data. Please check your input.'
+                })
     else:
         form = BookingForm()
     
@@ -236,14 +276,29 @@ def book_tour(request, tour_id):
             booking.booking_type = Booking.TOUR
             booking.tour = tour
             booking.total_amount = tour.price * booking.number_of_guests
+            booking.status = Booking.PENDING  # Keep as PENDING until payment
+            booking.payment_status = Booking.UNPAID
             booking.save()
             
             # Update current participants
             tour.current_participants += booking.number_of_guests
             tour.save()
             
-            messages.success(request, 'Tour booked successfully!')
-            return redirect('booking_confirmation', booking_id=booking.id)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'booking_id': booking.id,
+                    'total_amount': str(booking.total_amount)
+                })
+            
+            messages.success(request, 'Tour booked successfully! Please complete the payment.')
+            return redirect('booking_detail', booking_id=booking.id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid form data. Please check your input.'
+                })
     else:
         form = BookingForm()
     
@@ -255,16 +310,24 @@ def book_tour(request, tour_id):
 
 @login_required
 def booking_list(request):
-    if request.user.role == User.ADMIN:
-        bookings = Booking.objects.all().select_related(
-            'user', 'flight', 'hotel', 'tour'
-        ).order_by('-booking_date')
+    if request.user.is_admin:
+        # For admin users, show all paid bookings
+        paid_bookings = Booking.objects.filter(payment_status=Booking.PAID)
     else:
-        bookings = Booking.objects.filter(user=request.user).select_related(
-            'flight', 'hotel', 'tour'
-        ).order_by('-booking_date')
+        # For regular users, show only their paid bookings
+        paid_bookings = Booking.objects.filter(user=request.user, payment_status=Booking.PAID)
     
-    return render(request, 'booking/booking_list.html', {'bookings': bookings})
+    context = {
+        'paid_bookings': paid_bookings,
+    }
+    
+    # Check if it's an AJAX request for real-time updates
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'html': render_to_string('booking/booking_list_content.html', context, request=request)
+        })
+    
+    return render(request, 'booking/booking_list.html', context)
 
 @login_required
 def booking_detail(request, booking_id):
@@ -577,4 +640,213 @@ def delete_user(request, user_id):
         except User.DoesNotExist:
             messages.error(request, 'User not found.')
     
-    return redirect('manage_users') 
+    return redirect('manage_users')
+
+def get_mpesa_access_token():
+    """Generate M-Pesa OAuth access token."""
+    url = "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    
+    auth_string = f"{settings.MPESA_CONSUMER_KEY}:{settings.MPESA_CONSUMER_SECRET}"
+    auth_bytes = auth_string.encode('ascii')
+    auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
+    
+    headers = {
+        "Authorization": f"Basic {auth_b64}"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()['access_token']
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error getting access token: {str(e)}")
+        raise
+
+@api_view(['POST'])
+@csrf_exempt
+def initiate_payment(request, booking_id):
+    try:
+        booking = get_object_or_404(Booking, id=booking_id)
+        
+        # Check if booking is already paid
+        if booking.payment_status == Booking.PAID:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'This booking is already paid'
+            })
+        
+        # Check if there's a pending payment
+        if booking.transaction_id:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'A payment is already in progress for this booking'
+            })
+        
+        # Get phone number from request
+        data = request.data
+        phone_number = data.get('phone_number', '')
+        
+        # Validate phone number format (should be 254XXXXXXXXX)
+        if not phone_number.startswith('254') or not phone_number.isdigit() or len(phone_number) != 12:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Invalid phone number format. Use 254XXXXXXXXX'
+            })
+        
+        # Get M-Pesa access token
+        auth_response = requests.get(
+            'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+            auth=(settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET)
+        )
+        
+        if auth_response.status_code != 200:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Failed to get access token'
+            })
+        
+        access_token = auth_response.json()['access_token']
+        
+        # Prepare STK Push request
+        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        password_str = f'{settings.MPESA_SHORTCODE}{settings.MPESA_PASSKEY}{timestamp}'
+        password = base64.b64encode(password_str.encode()).decode('utf-8')
+        
+        stk_push_headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        
+        stk_push_payload = {
+            'BusinessShortCode': settings.MPESA_SHORTCODE,
+            'Password': password,
+            'Timestamp': timestamp,
+            'TransactionType': 'CustomerPayBillOnline',
+            'Amount': int(booking.total_amount),
+            'PartyA': phone_number,
+            'PartyB': settings.MPESA_SHORTCODE,
+            'PhoneNumber': phone_number,
+            'CallBackURL': settings.MPESA_CALLBACK_URL,
+            'AccountReference': f'TravelEase-{booking.id}',
+            'TransactionDesc': f'Payment for booking #{booking.id}'
+        }
+        
+        response = requests.post(
+            'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+            json=stk_push_payload,
+            headers=stk_push_headers
+        )
+        
+        if response.status_code != 200:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Failed to initiate payment'
+            })
+        
+        response_data = response.json()
+        
+        # Validate response format
+        if not response_data.get('CheckoutRequestID'):
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Invalid response from M-Pesa'
+            })
+        
+        # Save transaction ID but don't change status yet
+        booking.transaction_id = response_data['CheckoutRequestID']
+        booking.save()
+        
+        return JsonResponse({
+            'ResponseCode': '0',
+            'ResponseDescription': 'Success. Request accepted for processing',
+            'CheckoutRequestID': response_data['CheckoutRequestID'],
+            'CustomerMessage': response_data.get('CustomerMessage', 'Success. Request accepted for processing')
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'ResponseCode': '1',
+            'ResponseDescription': str(e)
+        }, status=500)
+
+@api_view(['POST'])
+@csrf_exempt
+def check_payment_status(request, booking_id):
+    try:
+        booking = get_object_or_404(Booking, id=booking_id)
+        
+        # Check if there's a transaction ID
+        if not booking.transaction_id:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'No payment initiated for this booking'
+            })
+        
+        # Get M-Pesa access token
+        auth_response = requests.get(
+            'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+            auth=(settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET)
+        )
+        
+        if auth_response.status_code != 200:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Failed to get access token'
+            })
+        
+        access_token = auth_response.json()['access_token']
+        
+        # Query payment status
+        headers = {
+            'Authorization': f'Bearer {access_token}'
+        }
+        
+        query_response = requests.post(
+            'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query',
+            json={
+                'BusinessShortCode': settings.MPESA_SHORTCODE,
+                'CheckoutRequestID': booking.transaction_id,
+                'Password': settings.MPESA_PASSWORD,
+                'Timestamp': timezone.now().strftime('%Y%m%d%H%M%S')
+            },
+            headers=headers
+        )
+        
+        if query_response.status_code != 200:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Failed to query payment status'
+            })
+        
+        result = query_response.json()
+        
+        if result.get('ResultCode') == '0':
+            # Payment successful
+            booking.payment_status = Booking.PAID
+            booking.status = Booking.CONFIRMED  # Update status to CONFIRMED only after successful payment
+            booking.save()
+            
+            return JsonResponse({
+                'ResponseCode': '0',
+                'ResponseDescription': 'Payment completed successfully'
+            })
+        elif result.get('ResultCode') == '1032':
+            # Payment cancelled by user
+            booking.transaction_id = ''  # Clear transaction ID to allow new payment
+            booking.save()
+            
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Payment cancelled by user'
+            })
+        else:
+            return JsonResponse({
+                'ResponseCode': '1',
+                'ResponseDescription': 'Payment pending or failed'
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'ResponseCode': '1',
+            'ResponseDescription': str(e)
+        }, status=500) 

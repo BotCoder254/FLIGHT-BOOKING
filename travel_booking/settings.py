@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'compressor',
     'widget_tweaks',
     'core',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -118,4 +119,11 @@ AUTH_USER_MODEL = 'core.User'
 # Authentication settings
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'home'
-LOGIN_URL = 'login' 
+LOGIN_URL = 'login'
+
+# M-Pesa Configurations
+MPESA_CONSUMER_KEY = "frmypHgIJYc7mQuUu5NBvnYc0kF3StP3"
+MPESA_CONSUMER_SECRET = "UAeJAJLNUkV5MLpL"
+MPESA_SHORTCODE = "4121151"
+MPESA_PASSKEY = "68cb945afece7b529b4a0901b2d8b1bb3bd9daa19bfdb48c69bec8dde962a932"
+MPESA_CALLBACK_URL = "https://github.com/BotCoder254" 

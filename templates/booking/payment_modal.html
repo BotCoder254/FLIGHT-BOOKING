@@ -1,0 +1,179 @@
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg p-8 max-w-lg w-full mx-4 relative">
+            <!-- Close button -->
+            <button onclick="closePaymentModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-500">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+
+            <!-- Modal content -->
+            <div class="space-y-6">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Complete Your Payment</h3>
+                    <p class="text-gray-600">Enter your M-Pesa phone number to proceed with payment</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-2">M-Pesa Phone Number</label>
+                        <div class="relative">
+                            <input type="tel" id="phone_number" name="phone_number" 
+                                   class="block w-full px-4 py-4 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="254712345678"
+                                   pattern="254[0-9]{9}">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <i class="fas fa-phone text-gray-400"></i>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">Format: 254XXXXXXXXX</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-center text-lg">
+                            <span class="font-medium text-gray-700">Amount to Pay:</span>
+                            <span class="font-bold text-indigo-600">$<span id="payment-amount" class="text-xl"></span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="paymentLoading" class="hidden space-y-4">
+                    <div class="flex justify-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    </div>
+                    <p class="text-center text-gray-600">Processing your payment...</p>
+                    <p class="text-center text-sm text-gray-500">Please check your phone for the M-Pesa prompt</p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 mt-6">
+                    <button onclick="closePaymentModal()" class="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Cancel
+                    </button>
+                    <button onclick="initiatePayment()" class="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg text-base font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Pay Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openPaymentModal(amount) {
+    document.getElementById('payment-amount').textContent = amount;
+    document.getElementById('paymentModal').classList.remove('hidden');
+    document.getElementById('paymentLoading').classList.add('hidden');
+    document.getElementById('phone_number').focus();
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+    document.getElementById('paymentLoading').classList.add('hidden');
+    document.getElementById('phone_number').value = '';
+}
+
+function showLoading() {
+    document.getElementById('paymentLoading').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('paymentLoading').classList.add('hidden');
+}
+
+function initiatePayment() {
+    const phoneNumber = document.getElementById('phone_number').value;
+    if (!phoneNumber) {
+        alert('Please enter your M-Pesa phone number');
+        return;
+    }
+    
+    if (!phoneNumber.match(/^254[0-9]{9}$/)) {
+        alert('Please enter a valid phone number starting with 254 followed by 9 digits');
+        return;
+    }
+    
+    showLoading();
+    
+    // First submit the form to create the booking
+    const formData = new FormData(document.getElementById('bookingForm'));
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Now initiate the payment
+            return fetch(`/bookings/${data.booking_id}/payment/initiate/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ phone_number: phoneNumber })
+            });
+        } else {
+            throw new Error(data.message || 'Failed to create booking');
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Start polling for payment status
+            pollPaymentStatus(data.booking_id);
+        } else {
+            throw new Error(data.message || 'Failed to initiate payment');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'An error occurred. Please try again.');
+        hideLoading();
+    });
+}
+
+function pollPaymentStatus(bookingId) {
+    let attempts = 0;
+    const maxAttempts = 24; // 2 minutes (24 * 5 seconds)
+    
+    const checkStatus = setInterval(() => {
+        attempts++;
+        
+        fetch(`/bookings/${bookingId}/payment/status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                clearInterval(checkStatus);
+                hideLoading();
+                closePaymentModal();
+                window.location.href = `/bookings/${bookingId}/confirmation/`;
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkStatus);
+                hideLoading();
+                alert('Payment status check timed out. Please check your M-Pesa messages or try again.');
+                closePaymentModal();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            clearInterval(checkStatus);
+            hideLoading();
+            alert('Failed to check payment status. Please check your M-Pesa messages or try again.');
+            closePaymentModal();
+        });
+    }, 5000); // Check every 5 seconds
+}
+</script> 
+</script> 

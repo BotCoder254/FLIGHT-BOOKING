@@ -7,7 +7,7 @@
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
         <h1 class="text-3xl font-bold text-gray-900 mb-8">
-            {% if user.is_admin %}All Bookings{% else %}My Bookings{% endif %}
+            {% if user.is_admin %}All Paid Bookings{% else %}My Paid Bookings{% endif %}
         </h1>
 
         {% if messages %}
@@ -18,71 +18,50 @@
             {% endfor %}
         {% endif %}
 
-        {% if bookings %}
-            <div class="bg-white shadow overflow-hidden sm:rounded-md">
-                <ul class="divide-y divide-gray-200">
-                    {% for booking in bookings %}
-                        <li>
-                            <a href="{% url 'booking_detail' booking.id %}" class="block hover:bg-gray-50">
-                                <div class="px-4 py-4 sm:px-6">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-medium text-indigo-600 truncate">
-                                                Booking #{{ booking.id }}
-                                                {% if booking.booking_type == 'FLIGHT' %}
-                                                    - Flight to {{ booking.flight.arrival_city }}
-                                                {% elif booking.booking_type == 'HOTEL' %}
-                                                    - {{ booking.hotel.name }}
-                                                {% else %}
-                                                    - {{ booking.tour.name }}
-                                                {% endif %}
-                                            </p>
-                                            {% if user.is_admin %}
-                                                <p class="mt-1 text-sm text-gray-500">
-                                                    Booked by: {{ booking.user.get_full_name }}
-                                                </p>
-                                            {% endif %}
-                                        </div>
-                                        <div class="ml-4 flex-shrink-0">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                {% if booking.status == 'CONFIRMED' %}bg-green-100 text-green-800
-                                                {% elif booking.status == 'PENDING' %}bg-yellow-100 text-yellow-800
-                                                {% else %}bg-red-100 text-red-800{% endif %}">
-                                                {{ booking.get_status_display }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2 sm:flex sm:justify-between">
-                                        <div class="sm:flex">
-                                            <p class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-calendar-alt flex-shrink-0 mr-1.5 text-gray-400"></i>
-                                                {{ booking.booking_date|date:"M d, Y" }}
-                                            </p>
-                                        </div>
-                                        <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                                            <p class="text-indigo-600 font-medium">
-                                                ${{ booking.total_amount }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% else %}
-            <div class="text-center py-12">
-                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
-                <h3 class="text-lg font-medium text-gray-900">No bookings found</h3>
-                <p class="mt-1 text-sm text-gray-500">Start exploring our amazing offers!</p>
-                <div class="mt-6">
-                    <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                        Browse Offers
-                    </a>
+        <div id="bookings-container">
+            {% if paid_bookings %}
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Completed Bookings</h2>
+                    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                        <ul class="divide-y divide-gray-200">
+                            {% for booking in paid_bookings %}
+                                {% include 'booking/booking_item.html' with booking=booking %}
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900">No paid bookings found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Start exploring our amazing offers!</p>
+                    <div class="mt-6">
+                        <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                            Browse Offers
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+    function updateBookings() {
+        fetch('{% url "booking_list" %}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('bookings-container').innerHTML = data.html;
+        });
+    }
+
+    // Update bookings every 10 seconds
+    setInterval(updateBookings, 10000);
+</script>
+{% endblock %}
 {% endblock %} 

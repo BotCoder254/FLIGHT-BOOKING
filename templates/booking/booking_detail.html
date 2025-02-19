@@ -5,133 +5,255 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <div class="max-w-3xl mx-auto">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
+    <div class="max-w-4xl mx-auto">
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-                <div>
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Booking Details
-                    </h3>
-                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                        Booking #{{ booking.id }}
-                    </p>
-                </div>
-                <div>
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                        {% if booking.status == 'CONFIRMED' %}bg-green-100 text-green-800
-                        {% elif booking.status == 'PENDING' %}bg-yellow-100 text-yellow-800
-                        {% else %}bg-red-100 text-red-800{% endif %}">
-                        {{ booking.get_status_display }}
-                    </span>
+                <h2 class="text-2xl font-bold text-gray-900">
+                    Booking #{{ booking.id }}
+                </h2>
+                <div class="flex space-x-2">
+                    {% if booking.status == 'CONFIRMED' and booking.payment_status == 'UNPAID' %}
+                        <button onclick="openPaymentModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            <i class="fas fa-money-bill-wave mr-2"></i>
+                            Pay with M-Pesa
+                        </button>
+                    {% endif %}
+                    {% if booking.status != 'CANCELLED' and booking.payment_status != 'PAID' %}
+                        <form method="POST" action="{% url 'cancel_booking' booking.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" onclick="return confirm('Are you sure you want to cancel this booking?')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
+                                <i class="fas fa-times mr-2"></i>
+                                Cancel Booking
+                            </button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
+            
             <div class="border-t border-gray-200">
                 <dl>
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Booking Type
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ booking.get_booking_type_display }}
-                        </dd>
+                        <dt class="text-sm font-medium text-gray-500">Booking Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ booking.get_booking_type_display }}</dd>
                     </div>
-                    {% if booking.booking_type == 'FLIGHT' %}
+                    
+                    {% if booking.flight %}
                         <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">Flight Details</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                {{ booking.flight.departure_city }} to {{ booking.flight.arrival_city }}<br>
+                                {{ booking.flight.airline }} - {{ booking.flight.flight_number }}<br>
+                                From: {{ booking.flight.departure_city }}<br>
+                                To: {{ booking.flight.arrival_city }}<br>
                                 Departure: {{ booking.flight.departure_time|date:"M d, Y H:i" }}<br>
                                 Arrival: {{ booking.flight.arrival_time|date:"M d, Y H:i" }}
                             </dd>
                         </div>
-                    {% elif booking.booking_type == 'HOTEL' %}
+                    {% endif %}
+                    
+                    {% if booking.hotel %}
                         <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">Hotel Details</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                 {{ booking.hotel.name }}<br>
-                                {{ booking.hotel.location }}<br>
-                                Check-in: {{ booking.check_in|date:"M d, Y" }}<br>
-                                Check-out: {{ booking.check_out|date:"M d, Y" }}
+                                Location: {{ booking.hotel.location }}<br>
+                                Room Type: {{ booking.hotel.get_room_type_display }}<br>
+                                Check-in: {{ booking.check_in_date|date:"M d, Y" }}<br>
+                                Check-out: {{ booking.check_out_date|date:"M d, Y" }}
                             </dd>
                         </div>
-                    {% else %}
+                    {% endif %}
+                    
+                    {% if booking.tour %}
                         <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">Tour Details</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                 {{ booking.tour.name }}<br>
                                 Destination: {{ booking.tour.destination }}<br>
+                                Type: {{ booking.tour.get_tour_type_display }}<br>
                                 Start Date: {{ booking.tour.start_date|date:"M d, Y" }}<br>
                                 Duration: {{ booking.tour.duration_days }} days
                             </dd>
                         </div>
                     {% endif %}
+                    
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Number of Guests
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ booking.number_of_guests }}
-                        </dd>
+                        <dt class="text-sm font-medium text-gray-500">Number of Guests</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ booking.number_of_guests }}</dd>
                     </div>
+                    
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Total Amount
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            ${{ booking.total_amount }}
-                        </dd>
+                        <dt class="text-sm font-medium text-gray-500">Total Amount</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${{ booking.total_amount }}</dd>
                     </div>
+                    
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Booking Date
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ booking.booking_date|date:"M d, Y H:i" }}
+                        <dt class="text-sm font-medium text-gray-500">Booking Status</dt>
+                        <dd class="mt-1 sm:mt-0 sm:col-span-2">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if booking.status == 'CONFIRMED' %}bg-green-100 text-green-800
+                                {% elif booking.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ booking.get_status_display }}
+                            </span>
                         </dd>
                     </div>
-                </dl>
-            </div>
-            <div class="px-4 py-5 sm:px-6 border-t border-gray-200">
-                <div class="flex justify-between items-center">
-                    <a href="{% url 'booking_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        Back to Bookings
-                    </a>
-                    <div class="space-x-2">
-                        {% if booking.status == 'CONFIRMED' %}
-                            <form method="POST" action="{% url 'cancel_booking' booking.id %}" class="inline">
-                                {% csrf_token %}
-                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                                    Cancel Booking
-                                </button>
-                            </form>
-                        {% endif %}
-                        {% if user.is_admin %}
-                            <form method="POST" action="{% url 'update_booking_status' booking.id %}" class="inline">
-                                {% csrf_token %}
-                                <select name="status" class="mr-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                    {% for status, label in booking.STATUS_CHOICES %}
-                                        <option value="{{ status }}" {% if booking.status == status %}selected{% endif %}>
-                                            {{ label }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                    Update Status
-                                </button>
-                            </form>
-                        {% endif %}
+                    
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Payment Status</dt>
+                        <dd class="mt-1 sm:mt-0 sm:col-span-2">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if booking.payment_status == 'PAID' %}bg-green-100 text-green-800
+                                {% elif booking.payment_status == 'UNPAID' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ booking.get_payment_status_display }}
+                            </span>
+                        </dd>
                     </div>
-                </div>
+                    
+                    {% if booking.special_requests %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Special Requests</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ booking.special_requests }}</dd>
+                        </div>
+                    {% endif %}
+                </dl>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-medium">Pay with M-Pesa</h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="phone_number" class="block text-sm font-medium text-gray-700">M-Pesa Phone Number</label>
+                    <input type="tel" id="phone_number" name="phone_number" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                           placeholder="e.g., 254712345678">
+                </div>
+                
+                <div class="text-sm text-gray-500">
+                    <p>Amount to pay: ${{ booking.total_amount }}</p>
+                    <p class="mt-1">You will receive a prompt on your phone to complete the payment.</p>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closePaymentModal()" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onclick="initiatePayment()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">
+                        Send Payment Request
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div id="paymentLoading" class="hidden">
+                <div class="flex justify-center items-center py-4">
+                    {% include 'components/loader.html' %}
+                </div>
+                <p class="text-center text-sm text-gray-500">Processing payment...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function openPaymentModal() {
+    document.getElementById('paymentModal').classList.remove('hidden');
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+}
+
+function showLoading() {
+    document.getElementById('paymentLoading').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('paymentLoading').classList.add('hidden');
+}
+
+function initiatePayment() {
+    const phoneNumber = document.getElementById('phone_number').value;
+    if (!phoneNumber) {
+        alert('Please enter your M-Pesa phone number');
+        return;
+    }
+    
+    showLoading();
+    
+    fetch('{% url "initiate_payment" booking.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ phone_number: phoneNumber })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ResponseCode === '0') {
+            pollPaymentStatus(data.CheckoutRequestID);
+        } else {
+            alert(data.ResponseDescription);
+            hideLoading();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to initiate payment. Please try again.');
+        hideLoading();
+    });
+}
+
+function pollPaymentStatus() {
+    let attempts = 0;
+    const maxAttempts = 24; // 2 minutes (24 * 5 seconds)
+    
+    const checkStatus = setInterval(() => {
+        attempts++;
+        
+        fetch('{% url "check_payment_status" booking.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ResponseCode === '0') {
+                clearInterval(checkStatus);
+                hideLoading();
+                closePaymentModal();
+                window.location.reload();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkStatus);
+                hideLoading();
+                alert('Payment status check timed out. Please check your M-Pesa messages.');
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            clearInterval(checkStatus);
+            hideLoading();
+            alert('Failed to check payment status. Please check your M-Pesa messages.');
+        });
+    }, 5000); // Check every 5 seconds
+}
+</script>
+{% endblock %}
 {% endblock %} 

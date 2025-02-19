@@ -47,46 +47,54 @@ function downloadPDF() {
 {% block title %}Booking Confirmation - TravelEase{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-3xl mx-auto">
-        <div class="text-center mb-8">
-            <div class="mb-4">
-                <i class="fas fa-check-circle text-6xl text-green-500"></i>
-            </div>
-            <h2 class="text-3xl font-bold text-gray-900">Booking Confirmed!</h2>
-            <p class="mt-2 text-lg text-gray-600">Thank you for choosing TravelEase</p>
-        </div>
-
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div class="px-4 py-5 sm:px-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                    Booking Details
-                </h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                    Booking #{{ booking.id }}
-                </p>
-            </div>
-            <div class="border-t border-gray-200">
-                <dl>
-                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Booking Type
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ booking.get_booking_type_display }}
-                        </dd>
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <!-- Success Header -->
+            <div class="p-6 bg-green-50 border-b border-green-200">
+                <div class="flex items-center justify-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-4xl text-green-500"></i>
                     </div>
-                    {% if booking.booking_type == 'FLIGHT' %}
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-green-800">
+                            Payment Successful!
+                        </h3>
+                        <p class="text-sm text-green-700">
+                            Your booking has been confirmed.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Booking Details -->
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-4">Booking Details</h2>
+                
+                <div class="border-t border-gray-200">
+                    <dl>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Booking ID</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">#{{ booking.id }}</dd>
+                        </div>
+                        
                         <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Booking Type</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ booking.get_booking_type_display }}</dd>
+                        </div>
+                        
+                        {% if booking.booking_type == 'flight' %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">Flight Details</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                {{ booking.flight.departure_city }} to {{ booking.flight.arrival_city }}<br>
-                                Departure: {{ booking.flight.departure_time|date:"M d, Y H:i" }}<br>
-                                Arrival: {{ booking.flight.arrival_time|date:"M d, Y H:i" }}
+                                {{ booking.flight.airline }} - {{ booking.flight.flight_number }}<br>
+                                From: {{ booking.flight.departure_city }}<br>
+                                To: {{ booking.flight.arrival_city }}<br>
+                                Departure: {{ booking.flight.departure_time|date:"M d, Y H:i" }}
                             </dd>
                         </div>
-                    {% elif booking.booking_type == 'HOTEL' %}
-                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        {% elif booking.booking_type == 'hotel' %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">Hotel Details</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                 {{ booking.hotel.name }}<br>
@@ -95,8 +103,8 @@ function downloadPDF() {
                                 Check-out: {{ booking.check_out|date:"M d, Y" }}
                             </dd>
                         </div>
-                    {% else %}
-                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        {% else %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                             <dt class="text-sm font-medium text-gray-500">Tour Details</dt>
                             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                 {{ booking.tour.name }}<br>
@@ -105,55 +113,37 @@ function downloadPDF() {
                                 Duration: {{ booking.tour.duration_days }} days
                             </dd>
                         </div>
-                    {% endif %}
-                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Number of Guests
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ booking.number_of_guests }}
-                        </dd>
-                    </div>
-                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Total Amount
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            ${{ booking.total_amount }}
-                        </dd>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">
-                            Payment Status
-                        </dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                {% if booking.payment_status == 'PAID' %}bg-green-100 text-green-800
-                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                                {{ booking.get_payment_status_display }}
-                            </span>
-                        </dd>
-                    </div>
-                </dl>
+                        {% endif %}
+                        
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Number of Guests</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ booking.number_of_guests }}</dd>
+                        </div>
+                        
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Total Amount</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${{ booking.total_amount }}</dd>
+                        </div>
+                        
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">Payment Status</dt>
+                            <dd class="mt-1 text-sm text-green-600 sm:mt-0 sm:col-span-2">Paid</dd>
+                        </div>
+                    </dl>
+                </div>
             </div>
-            <div class="px-4 py-5 sm:px-6 border-t border-gray-200">
-                <div class="flex justify-between items-center">
-                    <a href="{% url 'booking_list' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        View All Bookings
+            
+            <!-- Actions -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div class="flex justify-between">
+                    <a href="{% url 'dashboard' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-home mr-2"></i>
+                        Back to Dashboard
                     </a>
-                    <div class="flex space-x-4">
-                        <button onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                            <i class="fas fa-print mr-2"></i>
-                            Print Ticket
-                        </button>
-                        <button onclick="downloadPDF()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                            <i class="fas fa-file-pdf mr-2"></i>
-                            Download PDF
-                        </button>
-                        <a href="{% url 'home' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                            Book Another
-                        </a>
-                    </div>
+                    <a href="#" onclick="window.print()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-print mr-2"></i>
+                        Print Confirmation
+                    </a>
                 </div>
             </div>
         </div>

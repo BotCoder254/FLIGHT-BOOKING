@@ -22,6 +22,8 @@ urlpatterns = [
     path('bookings/<int:booking_id>/', views.booking_detail, name='booking_detail'),
     path('bookings/<int:booking_id>/cancel/', views.cancel_booking, name='cancel_booking'),
     path('bookings/<int:booking_id>/update-status/', views.update_booking_status, name='update_booking_status'),
+    path('bookings/<int:booking_id>/payment/initiate/', views.initiate_payment, name='initiate_payment'),
+    path('bookings/<int:booking_id>/payment/status/', views.check_payment_status, name='check_payment_status'),
     
     # Management URLs
     path('manage/flights/', views.manage_flights, name='manage_flights'),
