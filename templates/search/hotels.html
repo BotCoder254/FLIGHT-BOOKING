@@ -73,39 +73,61 @@
                     </div>
                     
                     <div class="border-t border-gray-200 pt-4">
-                        <div class="flex items-center justify-between">
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <p class="text-sm text-gray-500">Room Type</p>
                                 <p class="font-medium">{{ hotel.get_room_type_display }}</p>
                             </div>
                             <div>
+                                <p class="text-sm text-gray-500">Price per Night</p>
+                                <p class="font-medium text-indigo-600">${{ hotel.price_per_night }}</p>
+                            </div>
+                            <div>
                                 <p class="text-sm text-gray-500">Available Rooms</p>
                                 <p class="font-medium">{{ hotel.available_rooms }}</p>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="border-t border-gray-200 pt-4">
-                        <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-2xl font-bold text-indigo-600">${{ hotel.price_per_night }}</p>
-                                <p class="text-sm text-gray-500">per night</p>
+                                <p class="text-sm text-gray-500">Rating</p>
+                                <p class="font-medium flex items-center">
+                                    <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                    {{ hotel.rating }}
+                                </p>
                             </div>
-                            <a href="{% url 'book_hotel' hotel.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
-                                Book Now
-                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Hotel Policies -->
+                    <div class="border-t border-gray-200 pt-4 mt-4">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Hotel Policies</h4>
+                        <div class="space-y-2">
+                            <div class="flex items-start text-sm">
+                                <i class="fas fa-clock text-indigo-600 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">Check-in/out:</span>
+                                    <span class="text-gray-600">3 PM / 11 AM</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start text-sm">
+                                <i class="fas fa-exchange-alt text-indigo-600 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">Change Policy:</span>
+                                    <span class="text-gray-600">Changes allowed with fee</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start text-sm">
+                                <i class="fas fa-ban text-indigo-600 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">Cancellation:</span>
+                                    <span class="text-gray-600">Free up to 24h before</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="border-t border-gray-200 pt-4">
-                        <p class="text-sm text-gray-500 mb-2">Amenities</p>
-                        <div class="flex flex-wrap gap-2">
-                            {% for amenity in hotel.amenities.split %}
-                                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
-                                    {{ amenity }}
-                                </span>
-                            {% endfor %}
-                        </div>
+                    <div class="mt-4">
+                        <a href="{% url 'book_hotel' hotel.id %}" class="block w-full bg-indigo-600 text-white text-center py-2 rounded-lg hover:bg-indigo-700 transition duration-300">
+                            Book Now
+                        </a>
                     </div>
                 </div>
             </div>
@@ -121,4 +143,4 @@
         <p class="text-gray-600">Try adjusting your search criteria to find available hotels.</p>
     </div>
 {% endif %}
-{% endblock %} 
+{% endblock %}

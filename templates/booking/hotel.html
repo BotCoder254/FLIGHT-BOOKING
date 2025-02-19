@@ -101,23 +101,23 @@
                     <div class="border-t pt-4 mt-4">
                         <div class="flex justify-between mb-2">
                             <span class="text-gray-600">Price per Night</span>
-                            <span class="font-semibold">${{ hotel.price_per_night }}</span>
+                            <span class="font-semibold">${{ hotel.price_per_night|floatformat:2 }}</span>
                         </div>
                         <div class="flex justify-between mb-2">
                             <span class="text-gray-600">Number of Nights</span>
-                            <span class="font-semibold"><span id="nights-count">0</span> nights</span>
+                            <span class="font-semibold"><span id="nightCount">0</span> nights</span>
                         </div>
                         <div class="flex justify-between mb-2">
                             <span class="text-gray-600">Guests</span>
-                            <span class="font-semibold">× <span id="guest-count">1</span></span>
+                            <span class="font-semibold">× <span id="guestCount">1</span></span>
                         </div>
                         <div class="flex justify-between text-lg font-bold mt-4 pt-4 border-t">
                             <span>Total Amount</span>
-                            <span id="total-amount">$0.00</span>
+                            <span id="totalAmount">$0.00</span>
                         </div>
                     </div>
 
-                    <button type="button" onclick="handleBookingConfirmation()" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
                         Confirm Booking
                     </button>
                 </form>
@@ -126,69 +126,55 @@
     </div>
 </div>
 
+{% include 'booking/payment_modal.html' %}
+
 <script>
 function calculateNights() {
-    const checkIn = new Date(document.getElementById('{{ form.check_in.id_for_label }}').value);
-    const checkOut = new Date(document.getElementById('{{ form.check_out.id_for_label }}').value);
+    const checkIn = new Date(document.getElementById('id_check_in_date').value);
+    const checkOut = new Date(document.getElementById('id_check_out_date').value);
     
     if (checkIn && checkOut) {
         const diffTime = Math.abs(checkOut - checkIn);
         const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        document.getElementById('nights-count').textContent = nights;
+        document.getElementById('nightCount').textContent = nights;
         return nights;
     }
     return 0;
 }
 
 function calculateTotal() {
-    const pricePerNight = parseFloat('{{ hotel.price_per_night }}');
+    const pricePerNight = {{ hotel.price_per_night }};
     const nights = calculateNights();
-    const guests = document.getElementById('{{ form.number_of_guests.id_for_label }}').value || 1;
-    const total = pricePerNight * nights * guests;
+    const guests = document.getElementById('id_num_guests').value || 1;
+    const total = pricePerNight * nights;
     
-    document.getElementById('guest-count').textContent = guests;
-    document.getElementById('total-amount').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('guestCount').textContent = guests;
+    document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+    return total;
 }
 
-document.getElementById('{{ form.check_in.id_for_label }}').addEventListener('change', calculateTotal);
-document.getElementById('{{ form.check_out.id_for_label }}').addEventListener('change', calculateTotal);
-document.getElementById('{{ form.number_of_guests.id_for_label }}').addEventListener('change', calculateTotal);
+document.getElementById('id_check_in_date').addEventListener('change', calculateTotal);
+document.getElementById('id_check_out_date').addEventListener('change', calculateTotal);
+document.getElementById('id_num_guests').addEventListener('change', calculateTotal);
 calculateTotal();
 
-function handleBookingConfirmation() {
+// Handle form submission
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    e.preventDefault();
     const nights = calculateNights();
     if (nights === 0) {
         alert('Please select valid check-in and check-out dates');
         return;
     }
-    
     const total = calculateTotal();
     openPaymentModal(total.toFixed(2));
-}
-
-document.getElementById('bookingForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Submit the form using fetch
-    fetch(window.location.href, {
-        method: 'POST',
-        body: new FormData(this),
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = `/bookings/${data.booking_id}/confirmation/`;
-        } else {
-            alert(data.message || 'An error occurred. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
 });
+
+function openPaymentModal(amount) {
+    const modal = document.getElementById('paymentModal');
+    const amountElement = document.getElementById('payment-amount');
+    amountElement.textContent = amount;
+    modal.classList.remove('hidden');
+}
 </script>
 {% endblock %}

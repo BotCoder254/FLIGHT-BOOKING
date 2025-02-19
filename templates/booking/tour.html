@@ -106,6 +106,8 @@
     </div>
 </div>
 
+{% include 'booking/payment_modal.html' %}
+
 <script>
 function calculateTotal() {
     const price = {{ tour.price }};
@@ -114,16 +116,24 @@ function calculateTotal() {
     
     document.getElementById('participantCount').textContent = participants;
     document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
+    return total;
 }
 
 document.getElementById('id_number_of_guests').addEventListener('change', calculateTotal);
 calculateTotal();
 
+// Handle form submission
 document.getElementById('bookingForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    if (confirm('Are you sure you want to confirm this booking?')) {
-        this.submit();
-    }
+    const total = calculateTotal();
+    openPaymentModal(total.toFixed(2));
 });
+
+function openPaymentModal(amount) {
+    const modal = document.getElementById('paymentModal');
+    const amountElement = document.getElementById('payment-amount');
+    amountElement.textContent = amount;
+    modal.classList.remove('hidden');
+}
 </script>
 {% endblock %}

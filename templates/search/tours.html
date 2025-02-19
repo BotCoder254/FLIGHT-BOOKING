@@ -79,37 +79,48 @@
                                 <p class="font-medium">{{ tour.start_date|date:"M d, Y" }}</p>
                             </div>
                             <div>
+                                <p class="text-sm text-gray-500">Price</p>
+                                <p class="font-medium text-indigo-600">${{ tour.price }}</p>
+                            </div>
+                            <div>
                                 <p class="text-sm text-gray-500">Available Spots</p>
                                 <p class="font-medium">{{ tour.max_participants|sub:tour.current_participants }}</p>
                             </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Group Size</p>
-                                <p class="font-medium">{{ tour.current_participants }}/{{ tour.max_participants }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Tour Policies -->
+                    <div class="border-t border-gray-200 pt-4 mt-4">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Tour Policies</h4>
+                        <div class="space-y-2">
+                            <div class="flex items-start text-sm">
+                                <i class="fas fa-suitcase text-indigo-600 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">Baggage Policy:</span>
+                                    <span class="text-gray-600">1 carry-on bag included</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start text-sm">
+                                <i class="fas fa-exchange-alt text-indigo-600 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">Change Policy:</span>
+                                    <span class="text-gray-600">Changes allowed with fee</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start text-sm">
+                                <i class="fas fa-ban text-indigo-600 mt-1 mr-2"></i>
+                                <div>
+                                    <span class="font-medium">Cancellation Policy:</span>
+                                    <span class="text-gray-600">Free cancellation up to 24h</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="border-t border-gray-200 pt-4">
-                        <p class="text-sm text-gray-500 mb-2">Included Services</p>
-                        <div class="flex flex-wrap gap-2">
-                            {% for service in tour.included_services.split %}
-                                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
-                                    {{ service }}
-                                </span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <div class="border-t border-gray-200 pt-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-2xl font-bold text-indigo-600">${{ tour.price }}</p>
-                                <p class="text-sm text-gray-500">per person</p>
-                            </div>
-                            <a href="{% url 'book_tour' tour.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
-                                Book Now
-                            </a>
-                        </div>
+                    <div class="mt-4">
+                        <a href="{% url 'book_tour' tour.id %}" class="block w-full bg-indigo-600 text-white text-center py-2 rounded-lg hover:bg-indigo-700 transition duration-300">
+                            Book Now
+                        </a>
                     </div>
                 </div>
             </div>
@@ -125,4 +136,4 @@
         <p class="text-gray-600">Try adjusting your search criteria to find available tours.</p>
     </div>
 {% endif %}
-{% endblock %} 
+{% endblock %}
