@@ -126,4 +126,13 @@ MPESA_CONSUMER_KEY = "frmypHgIJYc7mQuUu5NBvnYc0kF3StP3"
 MPESA_CONSUMER_SECRET = "UAeJAJLNUkV5MLpL"
 MPESA_SHORTCODE = "4121151"
 MPESA_PASSKEY = "68cb945afece7b529b4a0901b2d8b1bb3bd9daa19bfdb48c69bec8dde962a932"
-MPESA_CALLBACK_URL = "https://github.com/BotCoder254" 
+MPESA_CALLBACK_URL = "https://github.com/BotCoder254"
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = 'TravelEase <noreply@travelease.com>' 

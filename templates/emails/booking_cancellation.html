@@ -1,0 +1,55 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Booking Cancellation - {{ booking.booking_type|title }} #{{ booking.id }}{% endblock %}
+
+{% block header %}Booking Cancelled{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }},</h2>
+
+<p>Your {{ booking.booking_type|title }} booking has been cancelled as requested. Here are the details of the cancelled booking:</p>
+
+<div class="info">
+    <h3>Cancelled Booking Information</h3>
+    <p><strong>Booking ID:</strong> #{{ booking.id }}</p>
+    <p><strong>Booking Type:</strong> {{ booking.booking_type|title }}</p>
+    <p><strong>Cancellation Date:</strong> {% now "F d, Y" %}</p>
+    <p><strong>Total Amount:</strong> ${{ booking.total_amount }}</p>
+    
+    {% if booking.booking_type == 'flight' %}
+    <h4>Flight Details</h4>
+    <p><strong>Airline:</strong> {{ booking.flight.airline }}</p>
+    <p><strong>Flight Number:</strong> {{ booking.flight.flight_number }}</p>
+    <p><strong>Departure:</strong> {{ booking.flight.departure_city }} ({{ booking.flight.departure_time|date:"F d, Y g:i A" }})</p>
+    <p><strong>Arrival:</strong> {{ booking.flight.arrival_city }} ({{ booking.flight.arrival_time|date:"F d, Y g:i A" }})</p>
+    
+    {% elif booking.booking_type == 'hotel' %}
+    <h4>Hotel Details</h4>
+    <p><strong>Hotel:</strong> {{ booking.hotel.name }}</p>
+    <p><strong>Location:</strong> {{ booking.hotel.location }}</p>
+    <p><strong>Check-in:</strong> {{ booking.check_in_date|date:"F d, Y" }}</p>
+    <p><strong>Check-out:</strong> {{ booking.check_out_date|date:"F d, Y" }}</p>
+    
+    {% elif booking.booking_type == 'tour' %}
+    <h4>Tour Details</h4>
+    <p><strong>Tour:</strong> {{ booking.tour.name }}</p>
+    <p><strong>Destination:</strong> {{ booking.tour.destination }}</p>
+    <p><strong>Start Date:</strong> {{ booking.tour.start_date|date:"F d, Y" }}</p>
+    <p><strong>End Date:</strong> {{ booking.tour.end_date|date:"F d, Y" }}</p>
+    {% endif %}
+</div>
+
+{% if booking.payment_status == 'paid' %}
+<p>If you are eligible for a refund, it will be processed according to our cancellation policy. The refund should appear in your account within 5-7 business days.</p>
+{% endif %}
+
+<p>You can view your booking history and make new reservations by clicking the button below:</p>
+
+<div style="text-align: center;">
+    <a href="http://{{ request.get_host }}/bookings/" class="button">View Bookings</a>
+</div>
+
+<p>We're sorry to see your booking cancelled. We hope to serve you again in the future!</p>
+
+<p>If you have any questions about the cancellation or would like to make a new booking, please don't hesitate to contact our customer support team.</p>
+{% endblock %} 

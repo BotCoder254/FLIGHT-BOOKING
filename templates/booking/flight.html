@@ -152,9 +152,10 @@
 const participantsInput = document.getElementById('{{ form.number_of_guests.id_for_label }}');
 const participantCount = document.getElementById('passenger-count');
 const totalAmount = document.getElementById('total-amount');
-const pricePerPerson = parseFloat('{{ flight.price }}');
+const pricePerPerson = {{ flight.price }};
 
 function calculateTotal() {
+    if (!participantsInput || !participantCount || !totalAmount) return;
     const participants = parseInt(participantsInput.value) || 1;
     participantCount.textContent = participants;
     const total = pricePerPerson * participants;
@@ -162,38 +163,48 @@ function calculateTotal() {
     return total;
 }
 
-participantsInput.addEventListener('change', calculateTotal);
+participantsInput?.addEventListener('change', calculateTotal);
 calculateTotal();
 
 // Handle booking confirmation
 function handleBookingConfirmation() {
     const total = calculateTotal();
-    openPaymentModal(total.toFixed(2));
+    if (total) {
+        openPaymentModal(total.toFixed(2));
+    }
 }
 
 // Handle form submission
-document.getElementById('bookingForm').addEventListener('submit', function(e) {
+document.getElementById('bookingForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
+    
+    const formData = new FormData(this);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
     
     // Submit the form using fetch
     fetch(window.location.href, {
         method: 'POST',
-        body: new FormData(this),
+        body: formData,
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             window.location.href = `/bookings/${data.booking_id}/confirmation/`;
         } else {
-            alert(data.message || 'An error occurred. Please try again.');
+            throw new Error(data.message || 'Invalid form data. Please check your input.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        alert(error.message || 'An error occurred. Please try again.');
     });
 });
 </script>

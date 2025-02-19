@@ -1,0 +1,61 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Payment Confirmation - {{ booking.booking_type|title }} #{{ booking.id }}{% endblock %}
+
+{% block header %}Payment Confirmed{% endblock %}
+
+{% block content %}
+<h2>Thank you for your payment, {{ user.first_name }}!</h2>
+
+<p>We have successfully received your payment for your {{ booking.booking_type|title }} booking. Here are your payment details:</p>
+
+<div class="info">
+    <h3>Payment Information</h3>
+    <p><strong>Booking ID:</strong> #{{ booking.id }}</p>
+    <p><strong>Payment Date:</strong> {% now "F d, Y" %}</p>
+    <p><strong>Amount Paid:</strong> ${{ booking.total_amount }}</p>
+    <p><strong>Payment Method:</strong> {{ booking.payment_method }}</p>
+    <p><strong>Transaction ID:</strong> {{ booking.transaction_id }}</p>
+    
+    {% if booking.booking_type == 'flight' %}
+    <h4>Flight Details</h4>
+    <p><strong>Airline:</strong> {{ booking.flight.airline }}</p>
+    <p><strong>Flight Number:</strong> {{ booking.flight.flight_number }}</p>
+    <p><strong>Departure:</strong> {{ booking.flight.departure_city }} ({{ booking.flight.departure_time|date:"F d, Y g:i A" }})</p>
+    <p><strong>Arrival:</strong> {{ booking.flight.arrival_city }} ({{ booking.flight.arrival_time|date:"F d, Y g:i A" }})</p>
+    
+    {% elif booking.booking_type == 'hotel' %}
+    <h4>Hotel Details</h4>
+    <p><strong>Hotel:</strong> {{ booking.hotel.name }}</p>
+    <p><strong>Location:</strong> {{ booking.hotel.location }}</p>
+    <p><strong>Check-in:</strong> {{ booking.check_in_date|date:"F d, Y" }}</p>
+    <p><strong>Check-out:</strong> {{ booking.check_out_date|date:"F d, Y" }}</p>
+    
+    {% elif booking.booking_type == 'tour' %}
+    <h4>Tour Details</h4>
+    <p><strong>Tour:</strong> {{ booking.tour.name }}</p>
+    <p><strong>Destination:</strong> {{ booking.tour.destination }}</p>
+    <p><strong>Start Date:</strong> {{ booking.tour.start_date|date:"F d, Y" }}</p>
+    <p><strong>End Date:</strong> {{ booking.tour.end_date|date:"F d, Y" }}</p>
+    {% endif %}
+</div>
+
+<p>You can view your booking details and download your receipt by clicking the button below:</p>
+
+<div style="text-align: center;">
+    <a href="http://{{ request.get_host }}/bookings/{{ booking.id }}/" class="button">View Booking Details</a>
+</div>
+
+<p>Thank you for choosing TravelEase! We look forward to providing you with an excellent travel experience.</p>
+
+<div class="info">
+    <p><strong>Important:</strong></p>
+    <ul>
+        <li>Please keep this email for your records</li>
+        <li>Present your booking ID at check-in</li>
+        <li>Review the cancellation policy in your booking details</li>
+    </ul>
+</div>
+
+<p>If you have any questions about your payment or booking, please don't hesitate to contact our customer support team.</p>
+{% endblock %} 

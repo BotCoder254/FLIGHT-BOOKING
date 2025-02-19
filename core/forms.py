@@ -3,14 +3,59 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import User, Flight, Hotel, Tour, Booking, HotelImage, TourImage
 
 class UserRegistrationForm(UserCreationForm):
-    first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
-    email = forms.EmailField(max_length=254, required=True)
-    terms = forms.BooleanField(required=True)
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        error_messages={'required': 'First name is required'}
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=True,
+        error_messages={'required': 'Last name is required'}
+    )
+    email = forms.EmailField(
+        max_length=254,
+        required=True,
+        error_messages={
+            'required': 'Email address is required',
+            'invalid': 'Please enter a valid email address'
+        }
+    )
+    role = forms.ChoiceField(
+        choices=[('traveler', 'Traveler'), ('admin', 'Admin')],
+        required=True,
+        error_messages={'required': 'Please select an account type'}
+    )
+    terms = forms.BooleanField(
+        required=True,
+        error_messages={'required': 'You must accept the Terms and Conditions'}
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'role')
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'role', 'terms')
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError('This email address is already in use.')
+        return email
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username and User.objects.filter(username=username).exists():
+            raise forms.ValidationError('This username is already taken.')
+        return username
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.role = self.cleaned_data['role']
+        if commit:
+            user.save()
+        return user
 
 class FlightSearchForm(forms.Form):
     departure_city = forms.CharField(max_length=100, required=False)

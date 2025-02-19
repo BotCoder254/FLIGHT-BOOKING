@@ -34,6 +34,14 @@
                 </div>
             {% endif %}
 
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="{% if message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% else %}bg-green-100 border-green-400 text-green-700{% endif %} border px-4 py-3 rounded relative" role="alert">
+                        <span class="block sm:inline">{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             <form class="mt-8 space-y-6" method="POST">
                 {% csrf_token %}
                 <div class="rounded-md shadow-sm -space-y-px">
@@ -41,36 +49,51 @@
                         <div>
                             <label for="id_first_name" class="block text-sm font-medium text-gray-700">First Name</label>
                             <input id="id_first_name" name="first_name" type="text" required
-                                   class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                   placeholder="First Name">
+                                   class="appearance-none rounded-lg relative block w-full px-3 py-2 border {% if form.first_name.errors %}border-red-500{% else %}border-gray-300{% endif %} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                   placeholder="First Name" value="{{ form.first_name.value|default:'' }}">
+                            {% if form.first_name.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         <div>
                             <label for="id_last_name" class="block text-sm font-medium text-gray-700">Last Name</label>
                             <input id="id_last_name" name="last_name" type="text" required
-                                   class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                   placeholder="Last Name">
+                                   class="appearance-none rounded-lg relative block w-full px-3 py-2 border {% if form.last_name.errors %}border-red-500{% else %}border-gray-300{% endif %} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                   placeholder="Last Name" value="{{ form.last_name.value|default:'' }}">
+                            {% if form.last_name.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                            {% endif %}
                         </div>
                     </div>
                     
                     <div class="mb-4">
                         <label for="id_email" class="block text-sm font-medium text-gray-700">Email</label>
                         <input id="id_email" name="email" type="email" required
-                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                               placeholder="Email">
+                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border {% if form.email.errors %}border-red-500{% else %}border-gray-300{% endif %} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                               placeholder="Email" value="{{ form.email.value|default:'' }}">
+                        {% if form.email.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                        {% endif %}
                     </div>
 
                     <div class="mb-4">
                         <label for="id_username" class="block text-sm font-medium text-gray-700">Username</label>
                         <input id="id_username" name="username" type="text" required
-                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                               placeholder="Username">
+                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border {% if form.username.errors %}border-red-500{% else %}border-gray-300{% endif %} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                               placeholder="Username" value="{{ form.username.value|default:'' }}">
+                        {% if form.username.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                        {% endif %}
                     </div>
 
                     <div class="mb-4">
                         <label for="id_password1" class="block text-sm font-medium text-gray-700">Password</label>
                         <input id="id_password1" name="password1" type="password" required
-                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border {% if form.password1.errors %}border-red-500{% else %}border-gray-300{% endif %} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                                placeholder="Password">
+                        {% if form.password1.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.password1.errors.0 }}</p>
+                        {% endif %}
                         <p class="mt-1 text-sm text-gray-500">
                             Your password must be at least 8 characters long and contain letters and numbers.
                         </p>
@@ -79,29 +102,39 @@
                     <div class="mb-4">
                         <label for="id_password2" class="block text-sm font-medium text-gray-700">Confirm Password</label>
                         <input id="id_password2" name="password2" type="password" required
-                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                               class="appearance-none rounded-lg relative block w-full px-3 py-2 border {% if form.password2.errors %}border-red-500{% else %}border-gray-300{% endif %} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                                placeholder="Confirm Password">
+                        {% if form.password2.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.password2.errors.0 }}</p>
+                        {% endif %}
                     </div>
 
                     <div class="mb-4">
                         <label for="id_role" class="block text-sm font-medium text-gray-700">Account Type</label>
                         <select id="id_role" name="role" required
-                                class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
-                            <option value="traveler">Traveler</option>
-                            <option value="admin">Admin</option>
+                                class="appearance-none rounded-lg relative block w-full px-3 py-2 border {% if form.role.errors %}border-red-500{% else %}border-gray-300{% endif %} text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm">
+                            <option value="traveler" {% if form.role.value == 'traveler' %}selected{% endif %}>Traveler</option>
+                            <option value="admin" {% if form.role.value == 'admin' %}selected{% endif %}>Admin</option>
                         </select>
+                        {% if form.role.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.role.errors.0 }}</p>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="flex items-center">
                     <input id="terms" name="terms" type="checkbox" required
-                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 {% if form.terms.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded"
+                           {% if form.terms.value %}checked{% endif %}>
                     <label for="terms" class="ml-2 block text-sm text-gray-900">
                         I agree to the
                         <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">Terms and Conditions</a>
                         and
                         <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">Privacy Policy</a>
                     </label>
+                    {% if form.terms.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.terms.errors.0 }}</p>
+                    {% endif %}
                 </div>
 
                 <div>

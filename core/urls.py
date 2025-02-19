@@ -6,6 +6,7 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('verify-email/<str:uidb64>/<str:token>/', views.verify_email, name='verify_email'),
     path('dashboard/', views.dashboard, name='dashboard'),
     
     # Search URLs
@@ -46,4 +47,6 @@ urlpatterns = [
     path('manage/users/<int:user_id>/toggle-role/', views.toggle_user_role, name='toggle_user_role'),
     path('manage/users/<int:user_id>/suspend/', views.suspend_user, name='suspend_user'),
     path('manage/users/<int:user_id>/delete/', views.delete_user, name='delete_user'),
+    path('test-email-services/', views.test_email_services, name='test_email_services'),
+    path('test-emails/', views.test_emails, name='test_emails'),
 ] 

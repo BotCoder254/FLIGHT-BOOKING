@@ -1,0 +1,56 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Booking Status Update - {{ booking.booking_type|title }} #{{ booking.id }}{% endblock %}
+
+{% block header %}Booking Status Updated{% endblock %}
+
+{% block content %}
+<h2>Hello {{ user.first_name }},</h2>
+
+<p>There has been an update to your {{ booking.booking_type|title }} booking. Here are the current details:</p>
+
+<div class="info">
+    <h3>Booking Information</h3>
+    <p><strong>Booking ID:</strong> #{{ booking.id }}</p>
+    <p><strong>Booking Type:</strong> {{ booking.booking_type|title }}</p>
+    <p><strong>Current Status:</strong> <span class="highlight">{{ booking.get_status_display }}</span></p>
+    <p><strong>Payment Status:</strong> {{ booking.get_payment_status_display }}</p>
+    <p><strong>Total Amount:</strong> ${{ booking.total_amount }}</p>
+    
+    {% if booking.booking_type == 'flight' %}
+    <h4>Flight Details</h4>
+    <p><strong>Airline:</strong> {{ booking.flight.airline }}</p>
+    <p><strong>Flight Number:</strong> {{ booking.flight.flight_number }}</p>
+    <p><strong>Departure:</strong> {{ booking.flight.departure_city }} ({{ booking.flight.departure_time|date:"F d, Y g:i A" }})</p>
+    <p><strong>Arrival:</strong> {{ booking.flight.arrival_city }} ({{ booking.flight.arrival_time|date:"F d, Y g:i A" }})</p>
+    
+    {% elif booking.booking_type == 'hotel' %}
+    <h4>Hotel Details</h4>
+    <p><strong>Hotel:</strong> {{ booking.hotel.name }}</p>
+    <p><strong>Location:</strong> {{ booking.hotel.location }}</p>
+    <p><strong>Check-in:</strong> {{ booking.check_in_date|date:"F d, Y" }}</p>
+    <p><strong>Check-out:</strong> {{ booking.check_out_date|date:"F d, Y" }}</p>
+    
+    {% elif booking.booking_type == 'tour' %}
+    <h4>Tour Details</h4>
+    <p><strong>Tour:</strong> {{ booking.tour.name }}</p>
+    <p><strong>Destination:</strong> {{ booking.tour.destination }}</p>
+    <p><strong>Start Date:</strong> {{ booking.tour.start_date|date:"F d, Y" }}</p>
+    <p><strong>End Date:</strong> {{ booking.tour.end_date|date:"F d, Y" }}</p>
+    {% endif %}
+</div>
+
+<p>You can view the complete booking details by clicking the button below:</p>
+
+<div style="text-align: center;">
+    <a href="http://{{ request.get_host }}/bookings/{{ booking.id }}/" class="button">View Booking Details</a>
+</div>
+
+{% if booking.status == 'confirmed' %}
+<p>Your booking is now confirmed! We look forward to providing you with an excellent travel experience.</p>
+{% elif booking.status == 'completed' %}
+<p>Thank you for choosing TravelEase! We hope you had a wonderful experience.</p>
+{% endif %}
+
+<p>If you have any questions about your booking, please don't hesitate to contact our customer support team.</p>
+{% endblock %} 

@@ -1,0 +1,24 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Verify Your TravelEase Account{% endblock %}
+
+{% block header %}Verify Your Account{% endblock %}
+
+{% block content %}
+<h2>Welcome to TravelEase, {{ user.first_name }}!</h2>
+
+<p>Thank you for creating an account with TravelEase. To complete your registration and start booking amazing travel experiences, please verify your email address by clicking the button below:</p>
+
+<div style="text-align: center;">
+    <a href="{{ verification_url }}" class="button">Verify Email Address</a>
+</div>
+
+<div class="info">
+    <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
+    <p style="word-break: break-all;">{{ verification_url }}</p>
+</div>
+
+<p>This verification link will expire in 24 hours for security reasons.</p>
+
+<p>If you did not create an account with TravelEase, please ignore this email.</p>
+{% endblock %} 
