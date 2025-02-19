@@ -3,259 +3,127 @@
 {% load widget_tweaks %}
 {% load custom_filters %}
 
-{% block title %}Book Tour - TravelEase{% endblock %}
+{% block title %}Book Tour{% endblock %}
 
-{% block extra_head %}
-<style>
-.slider-container {
-    position: relative;
-    width: 100%;
-    height: 400px;
-    overflow: hidden;
-}
-
-.slider {
-    display: flex;
-    transition: transform 0.5s ease-in-out;
-    height: 100%;
-}
-
-.slide {
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-}
-
-.slide img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.slider-nav {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 8px;
-    z-index: 10;
-}
-
-.slider-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    cursor: pointer;
-}
-
-.slider-dot.active {
-    background: white;
-}
-
-.slider-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-}
-
-.slider-arrow.prev {
-    left: 20px;
-}
-
-.slider-arrow.next {
-    right: 20px;
-}
-</style>
-{% endblock %}
-
-{% block booking_title %}Book Tour{% endblock %}
-
-{% block item_details %}
-<div class="space-y-6">
-    <!-- Tour Name and Type -->
-    <div class="flex items-center justify-between">
-        <div>
-            <h2 class="text-2xl font-bold">{{ tour.name }}</h2>
-            <p class="text-gray-600">
-                <i class="fas fa-map-marker-alt mr-2"></i>
-                {{ tour.destination }}
-            </p>
-        </div>
-        <div class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-lg">
-            {{ tour.get_tour_type_display }}
-        </div>
-    </div>
-
-    <!-- Tour Details Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-gray-50 rounded-lg p-4">
-            <p class="text-sm text-gray-500">Duration</p>
-            <p class="font-medium">{{ tour.duration_days }} days</p>
-        </div>
-        
-        <div class="bg-gray-50 rounded-lg p-4">
-            <p class="text-sm text-gray-500">Price per Person</p>
-            <p class="font-medium text-indigo-600">${{ tour.price }}</p>
-        </div>
-        
-        <div class="bg-gray-50 rounded-lg p-4">
-            <p class="text-sm text-gray-500">Available Spots</p>
-            <p class="font-medium">{{ tour.max_participants|sub:tour.current_participants }}</p>
-        </div>
-    </div>
-
-    <!-- Tour Description -->
-    <div>
-        <h4 class="text-lg font-semibold mb-2">About the Tour</h4>
-        <p class="text-gray-600">{{ tour.description }}</p>
-    </div>
-
-    <!-- Tour Schedule -->
-    <div>
-        <h4 class="text-lg font-semibold mb-4">Tour Schedule</h4>
-        <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-            <div>
-                <p class="text-sm text-gray-500">Start Date</p>
-                <p class="font-medium">{{ tour.start_date|date:"l, F d, Y" }}</p>
-            </div>
-            <div class="text-center">
-                <div class="w-16 h-px bg-gray-300"></div>
-                <p class="text-sm text-gray-500 mt-1">{{ tour.duration_days }} days</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">End Date</p>
-                <p class="font-medium">{{ tour.end_date|date:"l, F d, Y" }}</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Included Services -->
-    <div>
-        <h4 class="text-lg font-semibold mb-4">Included Services</h4>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {% for service in tour.included_services.split %}
-            <div class="flex items-center space-x-2">
-                <i class="fas fa-check text-green-500"></i>
-                <span>{{ service }}</span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block booking_form %}
-<div class="space-y-6">
-    <h3 class="text-xl font-semibold">Booking Details</h3>
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold mb-8">Book Tour</h1>
     
-    <!-- Booking Form -->
-    <form method="post" id="bookingForm" class="space-y-6">
-        {% csrf_token %}
-        
-        <div class="space-y-4">
-            {{ form.non_field_errors }}
-            
-            <div>
-                <label for="{{ form.number_of_guests.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Number of Participants</label>
-                {{ form.number_of_guests|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
-                {{ form.number_of_guests.errors }}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Tour Details -->
+        <div class="lg:col-span-2">
+            <!-- Image Section -->
+            <div class="bg-gray-200 h-96 rounded-lg mb-6 relative">
+                {% if tour.images.all %}
+                <img src="{{ tour.images.first.image.url }}" alt="{{ tour.name }}" class="w-full h-full object-cover rounded-lg">
+                {% else %}
+                <div class="flex items-center justify-center h-full">
+                    <i class="fas fa-mountain text-6xl text-gray-400"></i>
+                </div>
+                {% endif %}
             </div>
-            
-            <div>
-                <label for="{{ form.special_requests.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
-                {{ form.special_requests|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base min-h-[100px]" }}
-                <p class="mt-1 text-sm text-gray-500">Dietary requirements, accessibility needs, etc.</p>
-                {{ form.special_requests.errors }}
-            </div>
-            
-            <!-- Price Summary -->
-            <div class="border-t border-gray-200 pt-4 mt-4">
-                <h4 class="font-semibold mb-2">Price Summary</h4>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span>Price per Person</span>
-                        <span>${{ tour.price }}</span>
+
+            <div class="bg-white rounded-lg p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold">{{ tour.name }}</h2>
+                        <p class="text-gray-600">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            {{ tour.destination }}
+                        </p>
                     </div>
-                    <div class="flex justify-between text-sm">
-                        <span>Participants</span>
-                        <span>× <span id="participant-count">1</span></span>
-                    </div>
-                    <div class="flex justify-between font-semibold text-lg pt-2 border-t">
-                        <span>Total Amount</span>
-                        <span id="total-amount">${{ tour.price }}</span>
+                    <div class="bg-indigo-600 text-white px-4 py-2 rounded-lg">
+                        {{ tour.get_tour_type_display }}
                     </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="border rounded-lg p-4">
+                        <p class="text-gray-600">Duration</p>
+                        <p class="font-semibold">{{ tour.duration_days }} days</p>
+                    </div>
+                    <div class="border rounded-lg p-4">
+                        <p class="text-gray-600">Start Date</p>
+                        <p class="font-semibold">{{ tour.start_date|date:"M d, Y" }}</p>
+                    </div>
+                    <div class="border rounded-lg p-4">
+                        <p class="text-gray-600">End Date</p>
+                        <p class="font-semibold">{{ tour.end_date|date:"M d, Y" }}</p>
+                    </div>
+                    <div class="border rounded-lg p-4">
+                        <p class="text-gray-600">Available Spots</p>
+                        <p class="font-semibold">{{ tour.max_participants|sub:tour.current_participants }} of {{ tour.max_participants }}</p>
+                    </div>
+                </div>
+
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold mb-4">Tour Description</h3>
+                    <p class="text-gray-600">{{ tour.description }}</p>
+                </div>
             </div>
-            
-            <button type="button" onclick="handleBookingConfirmation()" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg text-lg font-medium hover:bg-indigo-700 transition duration-300">
-                Confirm Booking
-            </button>
         </div>
-    </form>
+
+        <!-- Booking Form -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg p-6 shadow-sm sticky top-8">
+                <h3 class="text-xl font-bold mb-6">Booking Details</h3>
+                <form method="post" id="bookingForm" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Number of Participants</label>
+                        {{ form.number_of_guests|add_class:"w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" }}
+                        <p class="text-sm text-gray-500 mt-1">Maximum {{ tour.max_participants|sub:tour.current_participants }} spots available</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
+                        {{ form.special_requests|add_class:"w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" }}
+                        <p class="text-sm text-gray-500 mt-1">Dietary requirements, accessibility needs, etc.</p>
+                    </div>
+
+                    <div class="border-t pt-4 mt-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600">Price per Person</span>
+                            <span class="font-semibold">${{ tour.price|floatformat:2 }}</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600">Participants</span>
+                            <span class="font-semibold">× <span id="participantCount">1</span></span>
+                        </div>
+                        <div class="flex justify-between text-lg font-bold mt-4 pt-4 border-t">
+                            <span>Total Amount</span>
+                            <span id="totalAmount">${{ tour.price|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Confirm Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
-{% include 'booking/payment_modal.html' %}
-
 <script>
-// Price calculation
-const participantsInput = document.getElementById('{{ form.number_of_guests.id_for_label }}');
-const participantCount = document.getElementById('participant-count');
-const totalAmount = document.getElementById('total-amount');
-const pricePerPerson = parseFloat('{{ tour.price }}');
-
 function calculateTotal() {
-    const participants = parseInt(participantsInput.value) || 1;
-    participantCount.textContent = participants;
-    const total = pricePerPerson * participants;
-    totalAmount.textContent = '$' + total.toFixed(2);
-    return total;
+    const price = {{ tour.price }};
+    const participants = document.getElementById('id_number_of_guests').value || 1;
+    const total = price * participants;
+    
+    document.getElementById('participantCount').textContent = participants;
+    document.getElementById('totalAmount').textContent = `$${total.toFixed(2)}`;
 }
 
-participantsInput.addEventListener('change', calculateTotal);
+document.getElementById('id_number_of_guests').addEventListener('change', calculateTotal);
 calculateTotal();
 
-// Handle booking confirmation
-function handleBookingConfirmation() {
-    const total = calculateTotal();
-    openPaymentModal(total.toFixed(2));
-}
-
-// Handle form submission
 document.getElementById('bookingForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
-    // Submit the form using fetch
-    fetch(window.location.href, {
-        method: 'POST',
-        body: new FormData(this),
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = `/bookings/${data.booking_id}/confirmation/`;
-        } else {
-            alert(data.message || 'An error occurred. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
+    if (confirm('Are you sure you want to confirm this booking?')) {
+        this.submit();
+    }
 });
 </script>
 {% endblock %}
