@@ -13,6 +13,7 @@ urlpatterns = [
     path('flights/search/', views.search_flights, name='search_flights'),
     path('hotels/search/', views.search_hotels, name='search_hotels'),
     path('tours/search/', views.search_tours, name='search_tours'),
+    path('api/cities/', views.get_cities, name='get_cities'),
     
     # Booking URLs
     path('flights/<int:flight_id>/book/', views.book_flight, name='book_flight'),

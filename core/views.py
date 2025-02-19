@@ -112,14 +112,16 @@ def search_flights(request):
     form = FlightSearchForm(request.GET or None)
     flights = Flight.objects.all()
     
-    if form.is_valid():
-        departure_city = form.cleaned_data.get('departure_city')
-        arrival_city = form.cleaned_data.get('arrival_city')
-        departure_date = form.cleaned_data.get('departure_date')
-        travel_class = form.cleaned_data.get('travel_class')
-        passengers = form.cleaned_data.get('passengers')
-        max_price = form.cleaned_data.get('max_price')
+    if request.method == 'GET':
+        departure_city = request.GET.get('departure_city')
+        arrival_city = request.GET.get('arrival_city')
+        departure_date = request.GET.get('departure_date')
+        return_date = request.GET.get('return_date')
+        travel_class = request.GET.get('travel_class')
+        passengers = request.GET.get('passengers', 1)
+        max_price = request.GET.get('max_price')
         
+        # Build the query dynamically
         if departure_city:
             flights = flights.filter(departure_city__icontains=departure_city)
         if arrival_city:
@@ -133,13 +135,50 @@ def search_flights(request):
         if max_price:
             flights = flights.filter(price__lte=max_price)
         
+        # Ensure future flights only
         flights = flights.filter(departure_time__gte=timezone.now())
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Return JSON response for AJAX requests
+            flight_data = []
+            for flight in flights:
+                flight_data.append({
+                    'id': flight.id,
+                    'airline': flight.airline,
+                    'flight_number': flight.flight_number,
+                    'departure_city': flight.departure_city,
+                    'arrival_city': flight.arrival_city,
+                    'departure_time': flight.departure_time.strftime('%Y-%m-%d %H:%M'),
+                    'arrival_time': flight.arrival_time.strftime('%Y-%m-%d %H:%M'),
+                    'price': str(flight.price),
+                    'available_seats': flight.available_seats,
+                    'travel_class': flight.get_travel_class_display()
+                })
+            return JsonResponse({'flights': flight_data})
     
     context = {
         'form': form,
         'flights': flights,
     }
     return render(request, 'search/flights.html', context)
+
+def get_cities(request):
+    """Get autocomplete suggestions for cities"""
+    query = request.GET.get('q', '')
+    if query:
+        # Get unique cities from both departure and arrival cities
+        departure_cities = Flight.objects.filter(
+            departure_city__icontains=query
+        ).values_list('departure_city', flat=True).distinct()
+        arrival_cities = Flight.objects.filter(
+            arrival_city__icontains=query
+        ).values_list('arrival_city', flat=True).distinct()
+        
+        # Combine and remove duplicates
+        cities = list(set(list(departure_cities) + list(arrival_cities)))
+        cities.sort()
+        return JsonResponse({'cities': cities[:10]})  # Limit to 10 suggestions
+    return JsonResponse({'cities': []})
 
 def search_hotels(request):
     form = HotelSearchForm(request.GET or None)
@@ -164,6 +203,23 @@ def search_hotels(request):
             hotels = hotels.filter(price_per_night__lte=max_price)
         if min_rating:
             hotels = hotels.filter(rating__gte=min_rating)
+            
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Return JSON response for AJAX requests
+            hotel_data = []
+            for hotel in hotels:
+                hotel_data.append({
+                    'id': hotel.id,
+                    'name': hotel.name,
+                    'location': hotel.location,
+                    'price_per_night': str(hotel.price_per_night),
+                    'room_type': hotel.get_room_type_display(),
+                    'available_rooms': hotel.available_rooms,
+                    'rating': hotel.rating,
+                    'amenities': hotel.amenities,
+                    'description': hotel.description
+                })
+            return JsonResponse({'hotels': hotel_data})
     
     context = {
         'form': form,
@@ -177,27 +233,43 @@ def search_tours(request):
     
     if form.is_valid():
         destination = form.cleaned_data.get('destination')
-        tour_type = form.cleaned_data.get('tour_type')
         start_date = form.cleaned_data.get('start_date')
-        max_duration = form.cleaned_data.get('max_duration')
+        end_date = form.cleaned_data.get('end_date')
+        tour_type = form.cleaned_data.get('tour_type')
         max_price = form.cleaned_data.get('max_price')
         participants = form.cleaned_data.get('participants')
         
         if destination:
             tours = tours.filter(destination__icontains=destination)
-        if tour_type:
-            tours = tours.filter(tour_type=tour_type)
         if start_date:
             tours = tours.filter(start_date__gte=start_date)
-        if max_duration:
-            tours = tours.filter(duration_days__lte=max_duration)
+        if end_date:
+            tours = tours.filter(end_date__lte=end_date)
+        if tour_type:
+            tours = tours.filter(tour_type=tour_type)
         if max_price:
             tours = tours.filter(price__lte=max_price)
         if participants:
-            available_spots = Q(max_participants__gt=F('current_participants') + participants)
-            tours = tours.filter(available_spots)
-        
-        tours = tours.filter(start_date__gte=timezone.now().date())
+            tours = tours.filter(max_participants__gte=F('current_participants') + participants)
+            
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # Return JSON response for AJAX requests
+            tour_data = []
+            for tour in tours:
+                tour_data.append({
+                    'id': tour.id,
+                    'name': tour.name,
+                    'destination': tour.destination,
+                    'price': str(tour.price),
+                    'duration_days': tour.duration_days,
+                    'start_date': tour.start_date.strftime('%Y-%m-%d'),
+                    'end_date': tour.end_date.strftime('%Y-%m-%d'),
+                    'tour_type': tour.get_tour_type_display(),
+                    'max_participants': tour.max_participants,
+                    'current_participants': tour.current_participants,
+                    'description': tour.description
+                })
+            return JsonResponse({'tours': tour_data})
     
     context = {
         'form': form,

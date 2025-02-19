@@ -188,4 +188,378 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     lazyImages.forEach(img => imageObserver.observe(img));
+});
+
+// Flight Search Functionality
+let searchTimeout;
+
+function initializeFlightSearch() {
+    const departureInput = document.querySelector('input[name="departure_city"]');
+    const arrivalInput = document.querySelector('input[name="arrival_city"]');
+    const searchForm = document.querySelector('.flight-search-form');
+
+    if (departureInput) {
+        setupCityAutocomplete(departureInput);
+    }
+    if (arrivalInput) {
+        setupCityAutocomplete(arrivalInput);
+    }
+    if (searchForm) {
+        setupRealTimeSearch(searchForm);
+    }
+}
+
+function setupCityAutocomplete(input) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative';
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const suggestionBox = document.createElement('div');
+    suggestionBox.className = 'absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg hidden';
+    wrapper.appendChild(suggestionBox);
+
+    input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value;
+        
+        if (query.length < 2) {
+            suggestionBox.innerHTML = '';
+            suggestionBox.classList.add('hidden');
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/cities/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionBox.innerHTML = '';
+                    if (data.cities.length > 0) {
+                        data.cities.forEach(city => {
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = city;
+                            div.addEventListener('click', () => {
+                                input.value = city;
+                                suggestionBox.classList.add('hidden');
+                                // Trigger search when selection is made
+                                input.dispatchEvent(new Event('change'));
+                            });
+                            suggestionBox.appendChild(div);
+                        });
+                        suggestionBox.classList.remove('hidden');
+                    } else {
+                        suggestionBox.classList.add('hidden');
+                    }
+                });
+        }, 300);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            suggestionBox.classList.add('hidden');
+        }
+    });
+}
+
+function setupRealTimeSearch(form) {
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('change', () => performSearch(form));
+    });
+}
+
+function performSearch(form) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const formData = new FormData(form);
+        const searchParams = new URLSearchParams(formData);
+        
+        fetch(`/flights/search/?${searchParams.toString()}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateFlightResults(data.flights);
+        })
+        .catch(error => console.error('Error:', error));
+    }, 500);
+}
+
+function updateFlightResults(flights) {
+    const resultsContainer = document.querySelector('#flight-results');
+    if (!resultsContainer) return;
+
+    if (flights.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="text-center py-8">
+                <p class="text-gray-500">No flights found matching your criteria.</p>
+            </div>
+        `;
+        return;
+    }
+
+    resultsContainer.innerHTML = flights.map(flight => `
+        <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold">${flight.airline}</h3>
+                    <p class="text-gray-600">Flight ${flight.flight_number}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-indigo-600">$${flight.price}</p>
+                    <p class="text-sm text-gray-500">${flight.travel_class}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between mb-4">
+                <div class="text-center">
+                    <p class="font-medium">${flight.departure_city}</p>
+                    <p class="text-sm text-gray-500">${flight.departure_time}</p>
+                </div>
+                
+                <div class="flex-1 px-8">
+                    <div class="relative">
+                        <div class="h-0.5 bg-gray-300 absolute w-full top-1/2"></div>
+                        <div class="flex justify-center">
+                            <i class="fas fa-plane text-indigo-600 text-2xl transform -rotate-90 bg-white px-2"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <p class="font-medium">${flight.arrival_city}</p>
+                    <p class="text-sm text-gray-500">${flight.arrival_time}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <p class="text-sm text-gray-600">${flight.available_seats} seats available</p>
+                <a href="/flights/${flight.id}/book/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    Book Now
+                </a>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Initialize search functionality for all booking types
+function initializeSearch() {
+    initializeFlightSearch();
+    initializeHotelSearch();
+    initializeTourSearch();
+}
+
+// Hotel Search Functionality
+function initializeHotelSearch() {
+    const searchForm = document.querySelector('.hotel-search-form');
+    const locationInput = document.querySelector('input[name="location"]');
+
+    if (locationInput) {
+        setupLocationAutocomplete(locationInput);
+    }
+    if (searchForm) {
+        setupRealTimeSearch(searchForm, 'hotel');
+    }
+}
+
+// Tour Search Functionality
+function initializeTourSearch() {
+    const searchForm = document.querySelector('.tour-search-form');
+    const destinationInput = document.querySelector('input[name="destination"]');
+
+    if (destinationInput) {
+        setupLocationAutocomplete(destinationInput);
+    }
+    if (searchForm) {
+        setupRealTimeSearch(searchForm, 'tour');
+    }
+}
+
+function setupLocationAutocomplete(input) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative';
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const suggestionBox = document.createElement('div');
+    suggestionBox.className = 'absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-lg hidden';
+    wrapper.appendChild(suggestionBox);
+
+    input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value;
+        
+        if (query.length < 2) {
+            suggestionBox.innerHTML = '';
+            suggestionBox.classList.add('hidden');
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            // Use the same endpoint for locations
+            fetch(`/api/cities/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionBox.innerHTML = '';
+                    if (data.cities.length > 0) {
+                        data.cities.forEach(city => {
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer';
+                            div.textContent = city;
+                            div.addEventListener('click', () => {
+                                input.value = city;
+                                suggestionBox.classList.add('hidden');
+                                input.dispatchEvent(new Event('change'));
+                            });
+                            suggestionBox.appendChild(div);
+                        });
+                        suggestionBox.classList.remove('hidden');
+                    } else {
+                        suggestionBox.classList.add('hidden');
+                    }
+                });
+        }, 300);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+            suggestionBox.classList.add('hidden');
+        }
+    });
+}
+
+function setupRealTimeSearch(form, type) {
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('change', () => performSearch(form, type));
+    });
+}
+
+function performSearch(form, type) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const formData = new FormData(form);
+        const searchParams = new URLSearchParams(formData);
+        
+        fetch(`/${type}s/search/?${searchParams.toString()}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (type === 'flight') {
+                updateFlightResults(data.flights);
+            } else if (type === 'hotel') {
+                updateHotelResults(data.hotels);
+            } else if (type === 'tour') {
+                updateTourResults(data.tours);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }, 500);
+}
+
+function updateHotelResults(hotels) {
+    const resultsContainer = document.querySelector('#hotel-results');
+    if (!resultsContainer) return;
+
+    if (hotels.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="text-center py-8">
+                <p class="text-gray-500">No hotels found matching your criteria.</p>
+            </div>
+        `;
+        return;
+    }
+
+    resultsContainer.innerHTML = hotels.map(hotel => `
+        <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold">${hotel.name}</h3>
+                    <p class="text-gray-600"><i class="fas fa-map-marker-alt mr-2"></i>${hotel.location}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-indigo-600">$${hotel.price_per_night}</p>
+                    <p class="text-sm text-gray-500">per night</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-sm">
+                    <p><i class="fas fa-bed mr-2"></i>${hotel.room_type}</p>
+                    <p><i class="fas fa-user-friends mr-2"></i>${hotel.available_rooms} rooms available</p>
+                </div>
+                <div class="text-sm">
+                    <p><i class="fas fa-star text-yellow-400 mr-2"></i>${hotel.rating} / 5</p>
+                    <p><i class="fas fa-concierge-bell mr-2"></i>${hotel.amenities}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <p class="text-sm text-gray-600">${hotel.description.substring(0, 100)}...</p>
+                <a href="/hotels/${hotel.id}/book/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    Book Now
+                </a>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateTourResults(tours) {
+    const resultsContainer = document.querySelector('#tour-results');
+    if (!resultsContainer) return;
+
+    if (tours.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="text-center py-8">
+                <p class="text-gray-500">No tours found matching your criteria.</p>
+            </div>
+        `;
+        return;
+    }
+
+    resultsContainer.innerHTML = tours.map(tour => `
+        <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold">${tour.name}</h3>
+                    <p class="text-gray-600"><i class="fas fa-map-marker-alt mr-2"></i>${tour.destination}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-2xl font-bold text-indigo-600">$${tour.price}</p>
+                    <p class="text-sm text-gray-500">per person</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-sm">
+                    <p><i class="fas fa-clock mr-2"></i>${tour.duration_days} days</p>
+                    <p><i class="fas fa-calendar mr-2"></i>${tour.start_date} - ${tour.end_date}</p>
+                </div>
+                <div class="text-sm">
+                    <p><i class="fas fa-users mr-2"></i>${tour.max_participants - tour.current_participants} spots left</p>
+                    <p><i class="fas fa-tag mr-2"></i>${tour.tour_type}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <p class="text-sm text-gray-600">${tour.description.substring(0, 100)}...</p>
+                <a href="/tours/${tour.id}/book/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    Book Now
+                </a>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSearch();
 }); 
