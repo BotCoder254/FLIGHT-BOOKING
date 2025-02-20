@@ -11,7 +11,7 @@ urlpatterns = [
     
     # MPESA Payment URLs
     path('api/mpesa/stkpush/', views.initiate_mpesa_payment, name='initiate_mpesa_payment'),
-    path('api/mpesa/status/<str:checkout_request_id>/', views.check_mpesa_status, name='check_mpesa_status'),
+    path('api/mpesa/query/<str:checkout_request_id>/', views.check_mpesa_status, name='check_mpesa_status'),
     
     # Search URLs
     path('flights/search/', views.search_flights, name='search_flights'),

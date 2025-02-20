@@ -146,7 +146,7 @@ function startPolling(checkoutRequestId) {
         }
 
         try {
-            const response = await fetch(`/api/mpesa/status/${checkoutRequestId}/`, {
+            const response = await fetch(`/api/mpesa/query/${checkoutRequestId}/`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'

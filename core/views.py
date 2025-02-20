@@ -756,7 +756,6 @@ def delete_user(request, user_id):
     
     return redirect('manage_users')
 
-@api_view(['POST'])
 @csrf_exempt
 def initiate_payment(request, booking_id):
     """
@@ -888,12 +887,10 @@ def test_emails(request):
                 'success': True,
                 'message': 'All email tests completed successfully. Check your inbox.'
             })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message': 'No test booking found. Only verification email was tested.'
-            })
-            
+        return JsonResponse({
+            'success': False,
+            'message': 'No test booking found. Only verification email was tested.'
+        })
     except Exception as e:
         print(f"Error testing emails: {str(e)}")
         return JsonResponse({
@@ -1005,8 +1002,13 @@ def check_mpesa_status(request, checkout_request_id):
         try:
             # Forward the status check to the MPESA server
             try:
-                status_response = requests.get(
-                    f'http://localhost:8000/status/{checkout_request_id}',
+                status_response = requests.post(  # Changed from GET to POST
+                    'http://localhost:8000/query',  # Changed endpoint
+                    json={'queryCode': checkout_request_id},  # Added request body
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     timeout=30
                 )
 
