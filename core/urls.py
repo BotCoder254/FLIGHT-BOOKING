@@ -9,6 +9,10 @@ urlpatterns = [
     path('verify-email/<str:uidb64>/<str:token>/', views.verify_email, name='verify_email'),
     path('dashboard/', views.dashboard, name='dashboard'),
     
+    # MPESA Payment URLs
+    path('api/mpesa/stkpush/', views.initiate_mpesa_payment, name='initiate_mpesa_payment'),
+    path('api/mpesa/status/<str:checkout_request_id>/', views.check_mpesa_status, name='check_mpesa_status'),
+    
     # Search URLs
     path('flights/search/', views.search_flights, name='search_flights'),
     path('hotels/search/', views.search_hotels, name='search_hotels'),

@@ -6,7 +6,7 @@ from django.db.models import Q, Sum, F
 from django.utils import timezone
 from .forms import (
     UserRegistrationForm, FlightSearchForm, HotelSearchForm,
-    TourSearchForm, BookingForm, FlightForm, HotelForm, TourForm
+    TourSearchForm, BookingForm, FlightForm, HotelForm, TourForm, BookingStatusForm
 )
 from .models import User, Flight, Hotel, Tour, Booking
 import base64
@@ -31,6 +31,7 @@ from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -755,149 +756,47 @@ def delete_user(request, user_id):
     
     return redirect('manage_users')
 
-def get_mpesa_access_token():
-    """Generate M-Pesa OAuth access token."""
-    url = "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-    
-    auth_string = f"{settings.MPESA_CONSUMER_KEY}:{settings.MPESA_CONSUMER_SECRET}"
-    auth_bytes = auth_string.encode('ascii')
-    auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
-    
-    headers = {
-        "Authorization": f"Basic {auth_b64}"
-    }
-    
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()['access_token']
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Error getting access token: {str(e)}")
-        raise
-
 @api_view(['POST'])
 @csrf_exempt
 def initiate_payment(request, booking_id):
-    booking = get_object_or_404(Booking, id=booking_id)
-    
-    if request.method == 'POST':
-        payment_number = request.POST.get('payment_number')
+    """
+    Endpoint to initiate payment for a booking
+    """
+    try:
+        booking = get_object_or_404(Booking, id=booking_id)
         
-        if not payment_number:
-            return JsonResponse({
-                'success': False,
-                'message': 'Payment number is required.'
-            })
-        
-        try:
-            # Process payment (your payment logic here)
-            # For now, we'll just mark it as paid
-            booking.payment_status = Booking.PAID
-            booking.status = Booking.CONFIRMED
-            booking.payment_method = 'M-PESA'  # Or your payment method
-            booking.transaction_id = f'TXN{booking.id}'  # Generate proper transaction ID
-            booking.save()
-            
-            # Send payment confirmation email
-            send_payment_confirmation_email(booking)
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Payment processed successfully.',
-                'booking_id': booking.id
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            })
-    
-    return JsonResponse({
-        'success': False,
-        'message': 'Invalid request method.'
-    })
+        # Return success response with booking details
+        return JsonResponse({
+            'success': True,
+            'message': 'Payment initiated successfully',
+            'booking_id': booking.id,
+            'amount': float(booking.total_amount)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=400)
 
 @api_view(['POST'])
 @csrf_exempt
 def check_payment_status(request, booking_id):
+    """
+    Endpoint to check payment status
+    """
     try:
         booking = get_object_or_404(Booking, id=booking_id)
         
-        # Check if there's a transaction ID
-        if not booking.transaction_id:
-            return JsonResponse({
-                'ResponseCode': '1',
-                'ResponseDescription': 'No payment initiated for this booking'
-            })
-        
-        # Get M-Pesa access token
-        auth_response = requests.get(
-            'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
-            auth=(settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET)
-        )
-        
-        if auth_response.status_code != 200:
-            return JsonResponse({
-                'ResponseCode': '1',
-                'ResponseDescription': 'Failed to get access token'
-            })
-        
-        access_token = auth_response.json()['access_token']
-        
-        # Query payment status
-        headers = {
-            'Authorization': f'Bearer {access_token}'
-        }
-        
-        query_response = requests.post(
-            'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query',
-            json={
-                'BusinessShortCode': settings.MPESA_SHORTCODE,
-                'CheckoutRequestID': booking.transaction_id,
-                'Password': settings.MPESA_PASSWORD,
-                'Timestamp': timezone.now().strftime('%Y%m%d%H%M%S')
-            },
-            headers=headers
-        )
-        
-        if query_response.status_code != 200:
-            return JsonResponse({
-                'ResponseCode': '1',
-                'ResponseDescription': 'Failed to query payment status'
-            })
-        
-        result = query_response.json()
-        
-        if result.get('ResultCode') == '0':
-            # Payment successful
-            booking.payment_status = Booking.PAID
-            booking.status = Booking.CONFIRMED  # Update status to CONFIRMED only after successful payment
-            booking.save()
-            
-            return JsonResponse({
-                'ResponseCode': '0',
-                'ResponseDescription': 'Payment completed successfully'
-            })
-        elif result.get('ResultCode') == '1032':
-            # Payment cancelled by user
-            booking.transaction_id = ''  # Clear transaction ID to allow new payment
-            booking.save()
-            
-            return JsonResponse({
-                'ResponseCode': '1',
-                'ResponseDescription': 'Payment cancelled by user'
-            })
-        else:
-            return JsonResponse({
-                'ResponseCode': '1',
-                'ResponseDescription': 'Payment pending or failed'
-            })
-            
+        return JsonResponse({
+            'success': True,
+            'status': booking.payment_status,
+            'message': 'Payment status retrieved successfully'
+        })
     except Exception as e:
         return JsonResponse({
-            'ResponseCode': '1',
-            'ResponseDescription': str(e)
-        }, status=500)
+            'success': False,
+            'message': str(e)
+        }, status=400)
 
 def verify_email(request, uidb64, token):
     try:
@@ -950,7 +849,6 @@ def test_email_services(request):
     
     return redirect('dashboard')
 
-# Create a test script for email functionality
 def test_emails(request):
     """
     Test script to verify all email functionality
@@ -1001,4 +899,159 @@ def test_emails(request):
         return JsonResponse({
             'success': False,
             'message': f'Error testing emails: {str(e)}'
-        }) 
+        })
+
+@csrf_exempt
+def initiate_mpesa_payment(request):
+    if request.method == 'POST':
+        try:
+            # Get the raw request body and parse it
+            data = json.loads(request.body)
+            phone_number = data.get('phoneNumber')
+            amount = data.get('amount')
+            order_id = data.get('orderId')
+
+            # Log the received data
+            logging.info(f"Received payment request: {data}")
+
+            if not all([phone_number, amount, order_id]):
+                missing_fields = [field for field, value in {
+                    'phoneNumber': phone_number,
+                    'amount': amount,
+                    'orderId': order_id
+                }.items() if not value]
+                return JsonResponse({
+                    'error': f'Missing required fields: {", ".join(missing_fields)}',
+                    'status': 'error'
+                }, status=400)
+
+            try:
+                # Forward the request to the MPESA server with correct field names
+                mpesa_response = requests.post(
+                    'http://localhost:8000/stkpush',
+                    json={
+                        'phone': phone_number,  # Changed from 'phoneNumber' to 'phone'
+                        'amount': float(amount),
+                        'orderId': order_id
+                    },
+                    headers={
+                        'Content-Type': 'application/json'
+                    },
+                    timeout=30
+                )
+
+                # Log the response for debugging
+                logging.info(f"MPESA Response Status: {mpesa_response.status_code}")
+                logging.info(f"MPESA Response Content: {mpesa_response.text}")
+
+                if not mpesa_response.ok:
+                    return JsonResponse({
+                        'error': 'MPESA service returned an error',
+                        'status': 'error'
+                    }, status=mpesa_response.status_code)
+
+                try:
+                    response_data = mpesa_response.json()
+                    return JsonResponse(response_data)
+                except json.JSONDecodeError:
+                    # If response is not JSON, return the raw text
+                    response_text = mpesa_response.text.strip()
+                    if response_text:
+                        return JsonResponse({
+                            'CheckoutRequestID': response_text,
+                            'status': 'success'
+                        })
+                    else:
+                        return JsonResponse({
+                            'error': 'Invalid response from MPESA service',
+                            'status': 'error'
+                        }, status=500)
+
+            except requests.exceptions.ConnectionError:
+                logging.error("Failed to connect to MPESA server")
+                return JsonResponse({
+                    'error': 'MPESA service is currently unavailable. Please try again later.',
+                    'status': 'error'
+                }, status=503)
+            except requests.exceptions.Timeout:
+                logging.error("MPESA server request timed out")
+                return JsonResponse({
+                    'error': 'Request timed out. Please try again.',
+                    'status': 'error'
+                }, status=504)
+            except Exception as e:
+                logging.error(f"MPESA server error: {str(e)}")
+                return JsonResponse({
+                    'error': str(e),
+                    'status': 'error'
+                }, status=500)
+        except json.JSONDecodeError as e:
+            logging.error(f"Invalid JSON in request: {str(e)}")
+            return JsonResponse({
+                'error': 'Invalid request data',
+                'status': 'error'
+            }, status=400)
+        except Exception as e:
+            logging.error(f"Payment initiation error: {str(e)}")
+            return JsonResponse({
+                'error': str(e),
+                'status': 'error'
+            }, status=500)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+def check_mpesa_status(request, checkout_request_id):
+    if request.method == 'GET':
+        try:
+            # Forward the status check to the MPESA server
+            try:
+                status_response = requests.get(
+                    f'http://localhost:8000/status/{checkout_request_id}',
+                    timeout=30
+                )
+
+                # Log the response for debugging
+                logging.info(f"Status Check Response Status: {status_response.status_code}")
+                logging.info(f"Status Check Response Content: {status_response.text}")
+
+                try:
+                    response_data = status_response.json()
+                    return JsonResponse(response_data)
+                except json.JSONDecodeError:
+                    # If response is not JSON, check if it's a known status
+                    status_text = status_response.text.strip().upper()
+                    if status_text in ['COMPLETED', 'FAILED', 'PENDING']:
+                        return JsonResponse({
+                            'status': status_text
+                        })
+                    else:
+                        return JsonResponse({
+                            'error': 'Invalid status response',
+                            'status': 'error'
+                        }, status=500)
+
+            except requests.exceptions.ConnectionError:
+                logging.error("Failed to connect to MPESA server for status check")
+                return JsonResponse({
+                    'error': 'MPESA service is currently unavailable. Please try again later.',
+                    'status': 'error'
+                }, status=503)
+            except requests.exceptions.Timeout:
+                logging.error("MPESA status check timed out")
+                return JsonResponse({
+                    'error': 'Status check timed out. Please try again.',
+                    'status': 'error'
+                }, status=504)
+            except Exception as e:
+                logging.error(f"MPESA status check error: {str(e)}")
+                return JsonResponse({
+                    'error': str(e),
+                    'status': 'error'
+                }, status=500)
+        except Exception as e:
+            logging.error(f"Status check error: {str(e)}")
+            return JsonResponse({
+                'error': str(e),
+                'status': 'error'
+            }, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
