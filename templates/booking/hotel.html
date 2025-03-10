@@ -117,12 +117,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Payment Details -->
-                        <div class="mt-4">
-                            <label for="paymentNumber" class="block text-sm font-medium text-gray-700 mb-2">Payment Number</label>
-                            <input type="text" id="paymentNumber" name="payment_number" class="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" placeholder="Enter payment number" required>
-                        </div>
                     </div>
 
                     <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg text-lg font-medium hover:bg-indigo-700 transition duration-300 mt-6">
@@ -134,8 +128,10 @@
     </div>
 </div>
 
+<!-- Move payment modal include before scripts -->
+{% include 'booking/payment_modal.html' %}
+
 <script>
-// Price calculation
 const checkInInput = document.getElementById('{{ form.check_in.id_for_label }}');
 const checkOutInput = document.getElementById('{{ form.check_out.id_for_label }}');
 const nightCount = document.getElementById('nightCount');
@@ -163,32 +159,33 @@ if (checkOutInput) {
 }
 calculateTotal();
 
-// Handle form submission
+function handleBookingConfirmation(e) {
+    if (e) e.preventDefault();
+    
+    if (!checkInInput?.value || !checkOutInput?.value) {
+        alert('Please select both check-in and check-out dates');
+        return;
+    }
+
+    const checkIn = new Date(checkInInput.value);
+    const checkOut = new Date(checkOutInput.value);
+    
+    if (checkIn >= checkOut) {
+        alert('Check-out date must be after check-in date');
+        return;
+    }
+
+    const total = calculateTotal();
+    if (total) {
+        openPaymentModal(total.toFixed(2), 'hotel');
+    }
+}
+
+// Update form submission
 const bookingForm = document.getElementById('bookingForm');
 if (bookingForm) {
-    bookingForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (!checkInInput?.value || !checkOutInput?.value) {
-            alert('Please select both check-in and check-out dates');
-            return;
-        }
-
-        const checkIn = new Date(checkInInput.value);
-        const checkOut = new Date(checkOutInput.value);
-        
-        if (checkIn >= checkOut) {
-            alert('Check-out date must be after check-in date');
-            return;
-        }
-
-        const total = calculateTotal();
-        if (total) {
-            openPaymentModal(total.toFixed(2), 'hotel');
-        }
-    });
+    bookingForm.addEventListener('submit', handleBookingConfirmation);
 }
 </script>
 
-{% include 'booking/payment_modal.html' %}
 {% endblock %}

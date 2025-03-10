@@ -74,16 +74,11 @@
                         {{ form.non_field_errors }}
                         
                         <div>
-                            <label for="{{ form.participants.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Number of Participants</label>
-                            <div class="relative">
-                                {{ form.participants|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                            </div>
-                            {{ form.participants.errors }}
+                            <label for="{{ form.number_of_guests.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Number of Participants</label>
+                            {{ form.number_of_guests|add_class:"appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base h-12" }}
+                            {% if form.number_of_guests.errors %}
+                                <p class="mt-2 text-sm text-red-600">{{ form.number_of_guests.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         
                         <div>
@@ -122,9 +117,10 @@
     </div>
 </div>
 
+{% include 'booking/payment_modal.html' %}
+
 <script>
-// Price calculation
-const participantsInput = document.getElementById('{{ form.participants.id_for_label }}');
+const participantsInput = document.getElementById('{{ form.number_of_guests.id_for_label }}');
 const participantCount = document.getElementById('participantCount');
 const totalAmount = document.getElementById('totalAmount');
 const pricePerPerson = Number('{{ tour.price }}');
@@ -146,30 +142,31 @@ if (participantsInput) {
 }
 calculateTotal();
 
-// Handle form submission
+function handleBookingConfirmation(e) {
+    if (e) e.preventDefault();
+    
+    if (!participantsInput?.value) {
+        alert('Please enter number of participants');
+        return;
+    }
+
+    const participants = parseInt(participantsInput.value);
+    if (participants <= 0) {
+        alert('Number of participants must be greater than 0');
+        return;
+    }
+
+    const total = calculateTotal();
+    if (total) {
+        openPaymentModal(total.toFixed(2), 'tour');
+    }
+}
+
+// Update form submission
 const bookingForm = document.getElementById('bookingForm');
 if (bookingForm) {
-    bookingForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (!participantsInput?.value) {
-            alert('Please enter number of participants');
-            return;
-        }
-
-        const participants = parseInt(participantsInput.value);
-        if (participants <= 0) {
-            alert('Number of participants must be greater than 0');
-            return;
-        }
-
-        const total = calculateTotal();
-        if (total) {
-            openPaymentModal(total.toFixed(2), 'tour');
-        }
-    });
+    bookingForm.addEventListener('submit', handleBookingConfirmation);
 }
 </script>
 
-{% include 'booking/payment_modal.html' %}
 {% endblock %}

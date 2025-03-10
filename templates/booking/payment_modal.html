@@ -1,37 +1,36 @@
 <!-- Payment Modal -->
+{% if stripe_publishable_key %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+const stripe = Stripe("{{ stripe_publishable_key }}", {
+    locale: 'en'
+});
+</script>
+{% endif %}
+
 <div id="paymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Complete MPESA Payment</h3>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Payment Details</h3>
             <div class="mt-2 px-7 py-3">
                 <p class="text-sm text-gray-500 mb-4">Total Amount: <span id="modalAmount" class="font-semibold"></span></p>
                 
-                <div class="mb-4">
-                    <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-2">MPESA Phone Number</label>
-                    <input type="tel" id="phoneNumber" name="phoneNumber" 
-                           class="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base"
-                           placeholder="254XXXXXXXXX"
-                           pattern="254[0-9]{9}"
-                           required>
-                    <p class="mt-1 text-xs text-gray-500">Format: 254XXXXXXXXX (e.g., 254712345678)</p>
-                </div>
-
-                <div id="paymentStatus" class="hidden mb-4">
+                <div id="paymentStatus" class="hidden mt-4">
                     <div class="flex items-center justify-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                         <p class="ml-2 text-sm text-gray-600">Processing payment...</p>
                     </div>
-                    <p class="mt-2 text-sm text-gray-500">Please check your phone for the MPESA prompt</p>
                 </div>
 
-                <div id="paymentError" class="hidden mb-4 text-red-600 text-sm"></div>
+                <div id="paymentError" class="hidden mt-4 text-red-600 text-sm"></div>
             </div>
-            <div class="flex justify-end space-x-3">
-                <button id="cancelPayment" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            
+            <div class="flex justify-between space-x-3 mt-4">
+                <button id="cancelPayment" class="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md">
                     Cancel
                 </button>
-                <button id="confirmPayment" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    Pay Now
+                <button onclick="handleStripePayment()" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md">
+                    Pay with Card
                 </button>
             </div>
         </div>
@@ -40,180 +39,58 @@
 
 <script>
 let currentBookingType = null;
+let currentAmount = null;
 
 function openPaymentModal(amount, bookingType) {
+    currentAmount = amount;
+    currentBookingType = bookingType;
     const modal = document.getElementById('paymentModal');
     const modalAmount = document.getElementById('modalAmount');
     modalAmount.textContent = `KES ${amount}`;
-    currentBookingType = bookingType;
     modal.classList.remove('hidden');
-    document.getElementById('phoneNumber').focus();
 }
 
-// Event Listeners
-document.getElementById('cancelPayment').addEventListener('click', () => {
-    const modal = document.getElementById('paymentModal');
-    const paymentStatus = document.getElementById('paymentStatus');
-    const paymentError = document.getElementById('paymentError');
-    
-    modal.classList.add('hidden');
-    paymentStatus.classList.add('hidden');
-    paymentError.classList.add('hidden');
-    document.getElementById('phoneNumber').value = '';
-});
-
-document.getElementById('confirmPayment').addEventListener('click', async () => {
-    const phoneNumber = document.getElementById('phoneNumber').value;
-    const amount = document.getElementById('modalAmount').textContent.replace('KES ', '');
-    const paymentStatus = document.getElementById('paymentStatus');
-    const paymentError = document.getElementById('paymentError');
-    const confirmButton = document.getElementById('confirmPayment');
-
-    if (!phoneNumber.match(/^254[0-9]{9}$/)) {
-        paymentError.textContent = 'Please enter a valid MPESA phone number (Format: 254XXXXXXXXX)';
-        paymentError.classList.remove('hidden');
-        return;
-    }
-
+async function handleStripePayment() {
     try {
-        paymentStatus.classList.remove('hidden');
-        paymentError.classList.add('hidden');
-        confirmButton.disabled = true;
-
-        // Get orderId from localStorage or generate a new one
-        let orderId = localStorage.getItem('currentBookingId');
-        if (!orderId) {
-            orderId = Date.now().toString();
-            localStorage.setItem('currentBookingId', orderId);
-        }
-
-        const response = await fetch('/api/mpesa/stkpush/', {
+        document.getElementById('paymentStatus').classList.remove('hidden');
+        const response = await fetch('/create-checkout-session/', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
             },
             body: JSON.stringify({
-                phoneNumber: phoneNumber,
-                amount: parseFloat(amount),
-                orderId: orderId
+                amount: currentAmount,
+                type: currentBookingType
             })
         });
 
-        // First get the response text
-        const responseText = await response.text();
-        let data;
+        const session = await response.json();
         
-        try {
-            // Try to parse the response text as JSON
-            data = JSON.parse(responseText);
-        } catch (parseError) {
-            console.error('JSON Parse Error:', parseError, 'Response Text:', responseText);
-            // Check if the response text is a checkout request ID
-            if (responseText.trim()) {
-                data = {
-                    CheckoutRequestID: responseText.trim(),
-                    status: 'success'
-                };
-            } else {
-                throw new Error('Invalid response from server. Please try again.');
-            }
+        if (session.error) {
+            throw new Error(session.error);
         }
         
-        if (data.status === 'error') {
-            throw new Error(data.error || 'Payment request failed. Please try again.');
-        }
-        
-        if (data.CheckoutRequestID) {
-            startPolling(data.CheckoutRequestID);
-        } else {
-            throw new Error('Payment request failed. Please try again.');
+        const result = await stripe.redirectToCheckout({
+            sessionId: session.id
+        });
+
+        if (result.error) {
+            throw new Error(result.error.message);
         }
     } catch (error) {
-        console.error('Payment Error:', error);
-        handleError(error);
+        console.error('Error:', error);
+        document.getElementById('paymentError').textContent = error.message;
+        document.getElementById('paymentError').classList.remove('hidden');
+    } finally {
+        document.getElementById('paymentStatus').classList.add('hidden');
     }
-});
-
-function startPolling(checkoutRequestId) {
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    const pollInterval = setInterval(async () => {
-        if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            handleError(new Error('Payment status check timed out. Please check your M-PESA app or try again.'));
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/mpesa/query/${checkoutRequestId}/`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            // First get the response text
-            const responseText = await response.text();
-            let data;
-            
-            try {
-                // Try to parse the response text as JSON
-                data = JSON.parse(responseText);
-            } catch (parseError) {
-                console.error('JSON Parse Error:', parseError, 'Response Text:', responseText);
-                throw new Error('Invalid response from server. Please try again.');
-            }
-
-            if (!response.ok) {
-                if (response.status === 503) {
-                    throw new Error('MPESA service is currently unavailable. Please try again later.');
-                } else if (response.status === 504) {
-                    throw new Error('Status check timed out. Please try again.');
-                }
-            }
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            if (data.status === 'COMPLETED') {
-                clearInterval(pollInterval);
-                localStorage.removeItem('currentBookingId');
-                window.location.href = '/booking/confirmation/';
-            } else if (data.status === 'FAILED') {
-                clearInterval(pollInterval);
-                localStorage.removeItem('currentBookingId');
-                throw new Error('Payment failed. Please try again.');
-            } else {
-                attempts++;
-            }
-        } catch (error) {
-            clearInterval(pollInterval);
-            console.error('Polling Error:', error);
-            handleError(error);
-        }
-    }, 5000);
 }
 
-function handleError(error) {
-    const paymentStatus = document.getElementById('paymentStatus');
-    const paymentError = document.getElementById('paymentError');
-    const confirmButton = document.getElementById('confirmPayment');
-    
-    paymentStatus.classList.add('hidden');
-    paymentError.textContent = error.message || 'An error occurred. Please try again.';
-    paymentError.classList.remove('hidden');
-    confirmButton.disabled = false;
-    
-    // Clear any stored orderId on error
-    localStorage.removeItem('currentBookingId');
-}
-
-// Close modal when clicking outside
-document.getElementById('paymentModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        document.getElementById('cancelPayment').click();
-    }
+document.getElementById('cancelPayment').addEventListener('click', () => {
+    const modal = document.getElementById('paymentModal');
+    modal.classList.add('hidden');
+    document.getElementById('paymentStatus').classList.add('hidden');
+    document.getElementById('paymentError').classList.add('hidden');
 });
 </script> 

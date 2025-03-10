@@ -138,15 +138,16 @@
                 </div>
             </div>
             
-            <button type="button" onclick="handleBookingConfirmation()" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg text-lg font-medium hover:bg-indigo-700 transition duration-300">
+            <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg text-lg font-medium hover:bg-indigo-700 transition duration-300">
                 Confirm Booking
             </button>
         </div>
     </form>
 </div>
 
+{% include 'booking/payment_modal.html' %}
+
 <script>
-// Price calculation
 const participantsInput = document.getElementById('{{ form.number_of_guests.id_for_label }}');
 const participantCount = document.getElementById('passenger-count');
 const totalAmount = document.getElementById('total-amount');
@@ -167,7 +168,9 @@ if (participantsInput) {
 calculateTotal();
 
 // Handle booking confirmation
-function handleBookingConfirmation() {
+function handleBookingConfirmation(e) {
+    if (e) e.preventDefault();
+    
     const total = calculateTotal();
     if (total) {
         openPaymentModal(total.toFixed(2), 'flight');
@@ -177,11 +180,7 @@ function handleBookingConfirmation() {
 // Handle form submission
 const bookingForm = document.getElementById('bookingForm');
 if (bookingForm) {
-    bookingForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-    });
+    bookingForm.addEventListener('submit', handleBookingConfirmation);
 }
 </script>
-
-{% include 'booking/payment_modal.html' %}
 {% endblock %} 
